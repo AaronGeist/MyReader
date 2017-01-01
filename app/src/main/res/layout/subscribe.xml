@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ListView
+        android:id="@+id/siteList"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"></ListView>
+
+    <EditText
+        android:id="@+id/newSiteInput"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"/>
+    <Button
+        android:id="@+id/addSiteBtn"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="New site"/>
+
+    <Button
+        android:id="@+id/removeAllSitesBtn"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Remove all sites"/>
+</LinearLayout>
