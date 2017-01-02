@@ -10,7 +10,7 @@ import android.widget.TextView;
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.constant.DBContants;
 import aaron.geist.myreader.database.DBManager;
-import aaron.geist.myreader.storage.Post;
+import aaron.geist.myreader.domain.Post;
 
 /**
  * Created by yzhou7 on 2015/8/7.

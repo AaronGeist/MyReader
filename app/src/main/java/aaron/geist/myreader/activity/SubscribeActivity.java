@@ -17,7 +17,7 @@ import java.util.Map;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.constant.DBContants;
-import aaron.geist.myreader.storage.Website;
+import aaron.geist.myreader.domain.Website;
 import aaron.geist.myreader.subscriber.SubscribeManager;
 
 /**

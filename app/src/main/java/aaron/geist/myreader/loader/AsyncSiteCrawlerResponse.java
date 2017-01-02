@@ -5,6 +5,6 @@ package aaron.geist.myreader.loader;
  */
 public interface AsyncSiteCrawlerResponse {
 
-    public void onTaskCompleted(Boolean crawlSucces);
+    public void onTaskCompleted(Boolean crawlSuccess);
 
 }

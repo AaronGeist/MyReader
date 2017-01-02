@@ -1,4 +1,4 @@
-package aaron.geist.myreader.storage;
+package aaron.geist.myreader.domain;
 
 /**
  * Created by yzhou7 on 2015/7/27.

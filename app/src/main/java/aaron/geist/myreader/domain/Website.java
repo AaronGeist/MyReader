@@ -1,4 +1,4 @@
-package aaron.geist.myreader.storage;
+package aaron.geist.myreader.domain;
 
 /**
  * This class defines the basic element for crawling a website.

@@ -3,7 +3,8 @@ package aaron.geist.myreader.loader;
 import android.content.Context;
 import android.util.Log;
 import aaron.geist.myreader.database.DBManager;
-import aaron.geist.myreader.storage.Website;
+import aaron.geist.myreader.domain.CrawlerRequest;
+import aaron.geist.myreader.domain.Website;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -135,7 +136,10 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
         // async crawl website, get posts and store in DB.
         AsyncSiteCrawler crawler = new AsyncSiteCrawler(ctx);
         crawler.response = this;
-        crawler.execute(website);
+        CrawlerRequest request = new CrawlerRequest();
+        request.setWebsite(website);
+        request.setReverse(false);
+        crawler.execute(request);
     }
 
     @Override

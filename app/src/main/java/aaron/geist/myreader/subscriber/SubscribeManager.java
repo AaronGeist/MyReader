@@ -1,15 +1,18 @@
 package aaron.geist.myreader.subscriber;
 
 import android.content.Context;
+import android.os.Environment;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
 import aaron.geist.myreader.constant.TestConstants;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.loader.HomePageParser;
-import aaron.geist.myreader.storage.Post;
-import aaron.geist.myreader.storage.Website;
+import aaron.geist.myreader.domain.Post;
+import aaron.geist.myreader.domain.Website;
+import aaron.geist.myreader.utils.FileUtil;
 
 /**
  * Created by yzhou7 on 2015/7/27.
@@ -44,6 +47,11 @@ public class SubscribeManager {
             Collection<Post> posts = mgr.getAllPostsBySiteId(website.getId());
             for (Post post : posts) {
                 mgr.removePost(post);
+            }
+
+            File dir = new File(Environment.getExternalStorageDirectory() + "/myReader/images/");
+            if (dir.exists()) {
+                FileUtil.delete(dir);
             }
         }
     }

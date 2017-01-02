@@ -5,12 +5,13 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
-import aaron.geist.myreader.constant.DBContants;
-import aaron.geist.myreader.storage.Post;
-import aaron.geist.myreader.storage.Website;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import aaron.geist.myreader.constant.DBContants;
+import aaron.geist.myreader.domain.Post;
+import aaron.geist.myreader.domain.Website;
 
 /**
  * Created by yzhou7 on 2015/7/27.
@@ -29,9 +30,10 @@ public class DBManager {
         long siteId = -1L;
 
         db.beginTransaction();
+        Cursor c = null;
         try {
             // check if exists
-            Cursor c = db.rawQuery("SELECT * FROM " + DBContants.WEBSITE_TABLE_NAME + " WHERE " +
+            c = db.rawQuery("SELECT * FROM " + DBContants.WEBSITE_TABLE_NAME + " WHERE " +
                     DBContants.WEBSITE_COLUMN_NAME + " = ?", new String[]{website.getName()});
 
             ContentValues cv = new ContentValues();
@@ -52,7 +54,11 @@ public class DBManager {
             }
             db.setTransactionSuccessful();
         } finally {
+            if (c != null) {
+                c.close();
+            }
             db.endTransaction();
+
         }
 
         return siteId;
@@ -78,13 +84,28 @@ public class DBManager {
         return websites;
     }
 
+    public Website getWebsiteById(long websiteId) {
+        Website website = new Website();
+        Cursor c = db.rawQuery("SELECT * FROM " + DBContants.WEBSITE_TABLE_NAME + " WHERE " +
+                DBContants.COLUMN_ID + " =?", new String[]{String.valueOf(websiteId)});
+        while (c.moveToNext()) {
+            website.setId(c.getInt(c.getColumnIndex(DBContants.COLUMN_ID)));
+            website.setName(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAME)));
+            website.setHomePage(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_HOMEPAGE)));
+            website.setPostEntryTag(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG)));
+            website.setNavigationUrl(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAVIGATION_URL)));
+        }
+        c.close();
+        return website;
+    }
 
     public long addPost(Post post) {
         long postId = -1L;
         db.beginTransaction();
+        Cursor c = null;
         try {
             // check if exists
-            Cursor c = db.rawQuery("SELECT * FROM " + DBContants.POST_TABLE_NAME + " WHERE " +
+            c = db.rawQuery("SELECT * FROM " + DBContants.POST_TABLE_NAME + " WHERE " +
                     DBContants.POST_COLUMN_EXTERNAL_ID + " = ?", new String[]{String.valueOf(post.getExternalId())});
             ContentValues cv = new ContentValues();
             cv.put(DBContants.POST_COLUMN_TITLE, post.getTitle());
@@ -108,6 +129,9 @@ public class DBManager {
             }
             db.setTransactionSuccessful();
         } finally {
+            if (c != null) {
+                c.close();
+            }
             db.endTransaction();
         }
 
@@ -136,17 +160,31 @@ public class DBManager {
     }
 
     public Post getSinglePost(long postId) {
-        Post post = new Post();
+        Post post = null;
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
                 DBContants.COLUMN_ID + "=" + postId, null, null, null, null);
         while (c.moveToNext()) {
-
+            post = new Post();
             post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
             post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
             post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
         }
-        Log.d("", "loaded post title=" + post.getTitle());
+        c.close();
+        return post;
+    }
+
+    public Post getPostByExternalId(long externalId) {
+        Post post = null;
+        Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
+                DBContants.POST_COLUMN_EXTERNAL_ID + "=" + externalId, null, null, null, null);
+        while (c.moveToNext()) {
+            post = new Post();
+            post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
+            post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
+            post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
+            post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
+        }
         c.close();
         return post;
     }
@@ -174,6 +212,21 @@ public class DBManager {
             c.close();
         }
         Log.d("", "get max post id = " + result);
+        return result;
+    }
+
+    public int getMinPostIdByWebsite(long websiteId) {
+        int result = -1;
+        Cursor c = db.query(DBContants.POST_TABLE_NAME,
+                new String[]{"MIN(" + DBContants.POST_COLUMN_EXTERNAL_ID + ")"},
+                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId, null, null, null, null);
+        try {
+            c.moveToNext();
+            result = c.getInt(0);
+        } finally {
+            c.close();
+        }
+        Log.d("", "get min post id = " + result);
         return result;
     }
 
