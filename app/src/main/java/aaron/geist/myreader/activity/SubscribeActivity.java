@@ -10,15 +10,15 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
-import aaron.geist.myreader.R;
-import aaron.geist.myreader.constant.DBContants;
-import aaron.geist.myreader.storage.Website;
-import aaron.geist.myreader.subscriber.SubscribeManager;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import aaron.geist.myreader.R;
+import aaron.geist.myreader.constant.DBContants;
+import aaron.geist.myreader.storage.Website;
+import aaron.geist.myreader.subscriber.SubscribeManager;
 
 /**
  * Created by yzhou7 on 2015/7/27.
@@ -76,8 +76,8 @@ public class SubscribeActivity extends Activity {
         });
     }
 
-    public void remove(View view) {
-//        mgr.removeTable();
+    public void removeAll(View view) {
+        subscribeManager.unSubscribeAll();
     }
 
     public void setBtnListener() {
@@ -93,7 +93,7 @@ public class SubscribeActivity extends Activity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                remove(view);
+                removeAll(view);
             }
         });
     }

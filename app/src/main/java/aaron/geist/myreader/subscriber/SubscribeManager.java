@@ -1,12 +1,15 @@
 package aaron.geist.myreader.subscriber;
 
 import android.content.Context;
+
+import java.util.Collection;
+import java.util.List;
+
 import aaron.geist.myreader.constant.TestConstants;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.loader.HomePageParser;
+import aaron.geist.myreader.storage.Post;
 import aaron.geist.myreader.storage.Website;
-
-import java.util.List;
 
 /**
  * Created by yzhou7 on 2015/7/27.
@@ -23,6 +26,7 @@ public class SubscribeManager {
 
     /**
      * Parse home page and add site to DB asynchronously.
+     *
      * @param url
      */
     public void subscribe(String url) {
@@ -31,9 +35,17 @@ public class SubscribeManager {
         parser.parse();
     }
 
-    // TODO remove website and all posts.
-    public void unSubscribe() {
+    // TODO add DB method to remove site more efficiently
+    public void unSubscribeAll() {
+        Collection<Website> websites = mgr.getAllWebsites();
+        for (Website website : websites) {
+            mgr.removeWebsite(website);
 
+            Collection<Post> posts = mgr.getAllPostsBySiteId(website.getId());
+            for (Post post : posts) {
+                mgr.removePost(post);
+            }
+        }
     }
 
     /**

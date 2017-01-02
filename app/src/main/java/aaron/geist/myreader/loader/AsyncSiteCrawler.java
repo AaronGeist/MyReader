@@ -3,11 +3,7 @@ package aaron.geist.myreader.loader;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
-import aaron.geist.myreader.constant.LoaderConstants;
-import aaron.geist.myreader.database.DBManager;
-import aaron.geist.myreader.storage.Post;
-import aaron.geist.myreader.storage.Website;
-import aaron.geist.myreader.utils.UrlParser;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,6 +14,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 
+import aaron.geist.myreader.constant.LoaderConstants;
+import aaron.geist.myreader.database.DBManager;
+import aaron.geist.myreader.storage.Post;
+import aaron.geist.myreader.storage.Website;
+import aaron.geist.myreader.utils.FileDownloader;
+import aaron.geist.myreader.utils.UrlParser;
+
 /**
  * Created by yzhou7 on 2015/8/6.
  */
@@ -25,6 +28,7 @@ public class AsyncSiteCrawler extends AsyncTask<Website, Integer, Boolean> {
 
     public static final String CLASS_ENTRY = "entry";
 
+    private Context ctx;
     private DBManager mgr;
     private Website website = null;
     private int maxPostId = -1;
@@ -37,8 +41,9 @@ public class AsyncSiteCrawler extends AsyncTask<Website, Integer, Boolean> {
      */
     boolean stopCrawl = false;
 
-    public AsyncSiteCrawler(Context contextt) {
-        mgr = new DBManager(contextt);
+    public AsyncSiteCrawler(Context ctx) {
+        this.ctx = ctx;
+        mgr = new DBManager(ctx);
     }
 
     @Override
@@ -88,7 +93,7 @@ public class AsyncSiteCrawler extends AsyncTask<Website, Integer, Boolean> {
         try {
             document = Jsoup.parse(url, LoaderConstants.DEFAULT_LOAD_TIMEOUT_MILLISEC);
         } catch (IOException e) {
-            Log.d("", "IOException: "  + e.getMessage());
+            Log.d("", "IOException: " + e.getMessage());
         }
 
         Log.d("", "finish loading page " + website.getNavigationUrl() + pageNum);
@@ -104,6 +109,7 @@ public class AsyncSiteCrawler extends AsyncTask<Website, Integer, Boolean> {
             post = iterator.next();
             postUrl = post.attr(HomePageParser.ATTR_HREF);
             crawlSinglePost(postUrl);
+            stopCrawl = true; // TODO remove this
         }
         crawlSuccess = true;
     }
@@ -120,7 +126,7 @@ public class AsyncSiteCrawler extends AsyncTask<Website, Integer, Boolean> {
         try {
             document = Jsoup.parse(url, LoaderConstants.DEFAULT_LOAD_TIMEOUT_MILLISEC);
         } catch (IOException e) {
-            Log.d("", "IOException: "  + e.getMessage());
+            Log.d("", "IOException: " + e.getMessage());
         }
 
         Element body = document.body();
@@ -138,7 +144,7 @@ public class AsyncSiteCrawler extends AsyncTask<Website, Integer, Boolean> {
             Post post = new Post();
             post.setUrl(urlStr);
             post.setTitle(titleStr);
-            post.setContent(entry.html());
+            post.setContent(localizeImages(entry));
             post.setExternalId(currentPostId);
             post.setWebsiteId(website.getId());
             mgr.addPost(post);
@@ -146,6 +152,24 @@ public class AsyncSiteCrawler extends AsyncTask<Website, Integer, Boolean> {
             Log.d("", "reach max post id, stop crawling.");
             stopCrawl = true;
         }
+    }
+
+    private String localizeImages(Element entry) {
+        Log.d("", "localizeImages");
+
+        // find images first
+        Elements images = entry.getElementsByTag("img");
+        Iterator<Element> it = images.listIterator();
+        while (it.hasNext()) {
+            Element img = it.next();
+            Log.d("", img.html());
+            String src = img.attr("src");
+
+            String filePath = FileDownloader.download(src, "/myReader/images/");
+            img.attr("src", filePath);
+        }
+
+        return entry.html();
     }
 
 }
