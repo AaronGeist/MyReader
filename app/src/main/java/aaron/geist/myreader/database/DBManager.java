@@ -145,7 +145,7 @@ public class DBManager {
     public List<Post> getAllPostsBySiteId(long siteId) {
         List<Post> posts = new ArrayList<Post>();
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
-                DBContants.POST_COLUMN_WEBSITE_ID + "=" + siteId, null, null, null, null);
+                DBContants.POST_COLUMN_WEBSITE_ID + "=" + siteId, null, null, null, DBContants.POST_COLUMN_EXTERNAL_ID + " DESC");
         while (c.moveToNext()) {
             Post post = new Post();
             post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));

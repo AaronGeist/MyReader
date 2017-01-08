@@ -21,16 +21,17 @@ import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
 import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
+import aaron.geist.myreader.extend.RefreshLayout;
 import aaron.geist.myreader.loader.AsyncSiteCrawler;
 import aaron.geist.myreader.loader.AsyncSiteCrawlerResponse;
 
 /**
  * Created by Aaron on 2015/8/7.
  */
-public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerResponse, SwipeRefreshLayout.OnRefreshListener {
+public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerResponse, RefreshLayout.OnRefreshListener, RefreshLayout.OnLoadListener {
 
     ListView listView = null;
-    SwipeRefreshLayout postRefresh = null;
+    RefreshLayout postRefresh = null;
     SimpleAdapter adapter = null;
     DBManager dbManager = null;
     long siteId;
@@ -54,8 +55,10 @@ public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerR
         loadAllPostTitle(siteId);
 
         // pull to refresh latest posts
-        postRefresh = (SwipeRefreshLayout) findViewById(R.id.postRefresh);
+        postRefresh = (RefreshLayout) findViewById(R.id.postRefresh);
         postRefresh.setOnRefreshListener(this);
+        postRefresh.setOnLoadListener(this);
+        postRefresh.setColorSchemeColors(R.color.colorAccent, R.color.colorPrimary, R.color.colorPrimaryDark);
     }
 
     public void loadAllPostTitle(long siteId) {
@@ -114,6 +117,17 @@ public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerR
         CrawlerRequest request = new CrawlerRequest();
         request.setWebsite(website);
         request.setReverse(false);
+        crawler.execute(request);
+    }
+
+    @Override
+    public void onLoad() {
+        Website website = dbManager.getWebsiteById(siteId);
+        AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
+        crawler.response = this;
+        CrawlerRequest request = new CrawlerRequest();
+        request.setWebsite(website);
+        request.setReverse(true);
         crawler.execute(request);
     }
 }
