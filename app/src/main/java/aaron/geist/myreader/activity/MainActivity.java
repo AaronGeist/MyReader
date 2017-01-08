@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity
         Null.setAlpha(0);
         listView.setDivider(Null);
         // bug: must setDivider first, otherwise divider will be invisible
-        listView.setDividerHeight(15);
+        listView.setDividerHeight(20);
         dbManager = new DBManager(this);
 
         List<Website> websites = dbManager.getAllWebsites();
