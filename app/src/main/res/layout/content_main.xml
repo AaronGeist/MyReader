@@ -13,37 +13,14 @@
     tools:context="aaron.geist.myreader.activity.MainActivity"
     tools:showIn="@layout/app_bar_main">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!" />
+    <aaron.geist.myreader.extend.RefreshLayout
+        android:id="@+id/postRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <WebView android:id="@+id/webContainer"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:focusable="false"
-        android:layout_below="@+id/triggerButton"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="63dp" />
-
-    <Button
-        android:id="@+id/triggerButton"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Go"
-        android:background="#ffffffff"
-        android:textColor="#000000"
-        android:layout_marginTop="30dp"
-        android:layout_alignParentStart="true" />
-
-    <Button
-        android:id="@+id/subscribePageBtn"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="New feed"
-        android:background="#ffffffff"
-        android:textColor="#000000"
-        android:layout_marginTop="14dp"
-        android:layout_below="@+id/triggerButton"
-        android:layout_alignParentStart="true" />
+        <ListView
+            android:id="@+id/postTitleList"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </aaron.geist.myreader.extend.RefreshLayout>
 </RelativeLayout>

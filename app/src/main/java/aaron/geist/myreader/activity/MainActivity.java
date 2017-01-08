@@ -3,6 +3,8 @@ package aaron.geist.myreader.activity;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -13,15 +15,40 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import aaron.geist.myreader.R;
+import aaron.geist.myreader.constant.DBContants;
+import aaron.geist.myreader.database.DBManager;
+import aaron.geist.myreader.domain.CrawlerRequest;
+import aaron.geist.myreader.domain.Post;
+import aaron.geist.myreader.domain.Website;
+import aaron.geist.myreader.extend.RefreshLayout;
+import aaron.geist.myreader.loader.AsyncSiteCrawler;
+import aaron.geist.myreader.loader.AsyncSiteCrawlerResponse;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, AsyncSiteCrawlerResponse, RefreshLayout.OnRefreshListener, RefreshLayout.OnLoadListener {
+
+    private ListView listView = null;
+    private RefreshLayout postRefresh = null;
+    private SimpleAdapter adapter = null;
+    private DBManager dbManager = null;
+    private List<Map<String, String>> adapterList = new ArrayList<Map<String, String>>();
+
+    private Long siteId = -1L;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,46 +75,9 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        setBtnListener();
-
         grantPermissions();
-    }
 
-    protected void setBtnListener() {
-        final Button triggerButton = (Button) findViewById(R.id.triggerButton);
-        triggerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                String baseURL = "http://www.importnew.com/all-posts";
-//                String html = "";
-//                try {
-//                    URL url = new URL(baseURL);
-//                    AsyncPageLoader task = new AsyncPageLoader();
-//                    html = task.execute(url).get().html();
-//                } catch (MalformedURLException e) {
-//                    e.printStackTrace();
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                } catch (ExecutionException e) {
-//                    e.printStackTrace();
-//                }
-//
-//                final WebView webView = (WebView) findViewById(R.id.webContainer);
-//                webView.loadDataWithBaseURL(baseURL, html, "text/html", "utf-8", null);
-            }
-        });
-
-
-        Button addFeedBtn = (Button) findViewById(R.id.subscribePageBtn);
-        addFeedBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent();
-                intent.setClass(view.getContext(), SubscribeActivity.class);
-                startActivity(intent);
-            }
-        });
-
+        showPosts();
     }
 
     private void grantPermissions() {
@@ -106,6 +96,60 @@ public class MainActivity extends AppCompatActivity
                     REQUEST_EXTERNAL_STORAGE
             );
         }
+    }
+
+    private void showPosts() {
+        listView = (ListView) findViewById(R.id.postTitleList);
+        Drawable Null = new ColorDrawable();
+        Null.setAlpha(0);
+        listView.setDivider(Null);
+        // bug: must setDivider first, otherwise divider will be invisible
+        listView.setDividerHeight(15);
+        dbManager = new DBManager(this);
+
+        List<Website> websites = dbManager.getAllWebsites();
+        if (websites != null && websites.size() > 0) {
+            // TODO load all posts of all sites
+            siteId = websites.get(0).getId();
+            loadAllPostTitle(siteId);
+        }
+
+        // pull to refresh latest posts
+        postRefresh = (RefreshLayout) findViewById(R.id.postRefresh);
+        postRefresh.setOnRefreshListener(this);
+        postRefresh.setOnLoadListener(this);
+        postRefresh.setColorSchemeColors(R.color.colorAccent, R.color.colorPrimary, R.color.colorPrimaryDark);
+    }
+
+    public void loadAllPostTitle(long siteId) {
+
+        List<Post> postList = dbManager.getAllPostsBySiteId(siteId);
+        Log.d("", "load post title number=" + postList.size());
+
+        for (Post post : postList) {
+            Map<String, String> map = new HashMap<String, String>();
+            map.put(DBContants.POST_COLUMN_TITLE, post.getTitle());
+            map.put(DBContants.COLUMN_ID, String.valueOf(post.getId()));
+            adapterList.add(map);
+        }
+        adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_list,
+                new String[]{DBContants.POST_COLUMN_TITLE, DBContants.COLUMN_ID}, new int[]{R.id.postTitle, R.id.postId});
+
+        listView.setAdapter(adapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
+                Map<String, String> map = (Map<String, String>) listView.getItemAtPosition(pos);
+                long postId = Long.valueOf(map.get(DBContants.COLUMN_ID));
+
+                Log.d("", "select post id=" + postId);
+
+                Intent intent = new Intent();
+                intent.putExtra(DBContants.COLUMN_ID, postId);
+                intent.setClass(view.getContext(), PostActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -158,10 +202,53 @@ public class MainActivity extends AppCompatActivity
 
         } else if (id == R.id.nav_send) {
 
+        } else if (id == R.id.nav_subscribe) {
+            Intent intent = new Intent();
+            intent.setClass(this.getApplicationContext(), SubscribeActivity.class);
+            startActivity(intent);
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onTaskCompleted(Boolean crawlSuccess) {
+        postRefresh.setRefreshing(false);
+        adapterList.clear();
+
+        List<Post> postList = dbManager.getAllPostsBySiteId(siteId);
+        Log.d("", "load post title number=" + postList.size());
+
+        for (Post post : postList) {
+            Map<String, String> map = new HashMap<String, String>();
+            map.put(DBContants.POST_COLUMN_TITLE, post.getTitle());
+            map.put(DBContants.COLUMN_ID, String.valueOf(post.getId()));
+            adapterList.add(map);
+        }
+        adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onRefresh() {
+        Website website = dbManager.getWebsiteById(siteId);
+        AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
+        crawler.response = this;
+        CrawlerRequest request = new CrawlerRequest();
+        request.setWebsite(website);
+        request.setReverse(false);
+        crawler.execute(request);
+    }
+
+    @Override
+    public void onLoad() {
+        Website website = dbManager.getWebsiteById(siteId);
+        AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
+        crawler.response = this;
+        CrawlerRequest request = new CrawlerRequest();
+        request.setWebsite(website);
+        request.setReverse(true);
+        crawler.execute(request);
     }
 }
