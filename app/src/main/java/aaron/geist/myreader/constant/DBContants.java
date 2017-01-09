@@ -20,5 +20,7 @@ public class DBContants {
     public static final String POST_COLUMN_EXTERNAL_ID = "externalId";
     public static final String POST_COLUMN_URL = "url";
     public static final String POST_COLUMN_WEBSITE_ID = "websiteId";
+    public static final String POST_COLUMN_STARED = "stared";
+    public static final String POST_COLUMN_READ = "read";
 
 }

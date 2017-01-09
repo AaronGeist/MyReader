@@ -3,18 +3,14 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/round_corner"
-    android:padding="5dp"
-    android:layout_margin="15dp">
+    android:background="@drawable/round_corner">
 
     <TextView
         android:id="@+id/postTitle"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:padding="3dp"/>
-
-    <TextView
-        android:id="@+id/postId"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
+        android:textColor="#222222"
+        android:textSize="18sp"
+        android:padding="3dp"
+        android:minHeight="60dp"/>
 </LinearLayout>

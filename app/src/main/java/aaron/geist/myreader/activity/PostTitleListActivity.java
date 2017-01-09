@@ -73,7 +73,7 @@ public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerR
             adapterList.add(map);
         }
         adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_list,
-                new String[]{DBContants.POST_COLUMN_TITLE, DBContants.COLUMN_ID}, new int[]{R.id.postTitle, R.id.postId});
+                new String[]{DBContants.POST_COLUMN_TITLE}, new int[]{R.id.postTitle});
 
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

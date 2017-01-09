@@ -3,6 +3,7 @@ package aaron.geist.myreader.database;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
 import aaron.geist.myreader.constant.DBContants;
 
 /**
@@ -12,7 +13,8 @@ import aaron.geist.myreader.constant.DBContants;
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "zreader.db";
-    private static final int DATABASE_VERSION = 1;
+    // add version to call onUpgrade
+    private static final int DATABASE_VERSION = 2;
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -34,12 +36,15 @@ public class DBHelper extends SQLiteOpenHelper {
                 + DBContants.POST_COLUMN_CONTENT + " TEXT, "
                 + DBContants.POST_COLUMN_EXTERNAL_ID + " NUMBER, "
                 + DBContants.POST_COLUMN_URL + " VARCHAR, "
-                + DBContants.POST_COLUMN_WEBSITE_ID + " NUMBER)");
+                + DBContants.POST_COLUMN_WEBSITE_ID + " NUMBER, "
+                + DBContants.POST_COLUMN_STARED + " INT DEFAULT 0, "
+                + DBContants.POST_COLUMN_READ + " INT DEFAULT 0)");
+
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
-        db.execSQL("ALTER TABLE " + DBContants.WEBSITE_TABLE_NAME + " ADD COLUMN other STRING");
-        db.execSQL("ALTER TABLE " + DBContants.POST_TABLE_NAME + " ADD COLUMN other STRING");
+//        db.execSQL("ALTER TABLE " + DBContants.WEBSITE_TABLE_NAME + " ADD COLUMN other STRING");
+        db.execSQL("ALTER TABLE " + DBContants.POST_TABLE_NAME + " ADD COLUMN " + DBContants.POST_COLUMN_READ + " INT default 0");
     }
 }

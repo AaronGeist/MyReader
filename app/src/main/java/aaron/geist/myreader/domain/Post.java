@@ -1,7 +1,7 @@
 package aaron.geist.myreader.domain;
 
 /**
- * Created by yzhou7 on 2015/7/27.
+ * Created by Aaron on 2015/7/27.
  */
 public class Post {
 
@@ -14,6 +14,8 @@ public class Post {
     private int externalId;
     private String url;
     private long websiteId;
+    private boolean stared;
+    private boolean read;
 
     public long getId() {
         return id;
@@ -61,5 +63,21 @@ public class Post {
 
     public void setWebsiteId(long websiteId) {
         this.websiteId = websiteId;
+    }
+
+    public boolean isStarted() {
+        return stared;
+    }
+
+    public void setStared(boolean stared) {
+        this.stared = stared;
+    }
+
+    public boolean isRead() {
+        return read;
+    }
+
+    public void setRead(boolean read) {
+        this.read = read;
     }
 }

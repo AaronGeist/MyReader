@@ -133,8 +133,9 @@ public class MainActivity extends AppCompatActivity
             adapterList.add(map);
         }
         adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_list,
-                new String[]{DBContants.POST_COLUMN_TITLE, DBContants.COLUMN_ID}, new int[]{R.id.postTitle, R.id.postId});
-
+                new String[]{DBContants.POST_COLUMN_TITLE}, new int[]{R.id.postTitle});
+//        adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_list,
+//                new String[]{DBContants.POST_COLUMN_TITLE, DBContants.COLUMN_ID}, new int[]{R.id.postTitle, R.id.postId});
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

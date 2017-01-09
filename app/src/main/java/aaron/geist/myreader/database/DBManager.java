@@ -153,6 +153,8 @@ public class DBManager {
             post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
             post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
+            post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
+            post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
             posts.add(post);
         }
         c.close();
@@ -169,6 +171,8 @@ public class DBManager {
             post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
             post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
+            post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
+            post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
         }
         c.close();
         return post;
@@ -230,10 +234,35 @@ public class DBManager {
         return result;
     }
 
-//    public void removeTable() {
-//        db.execSQL("DROP TABLE IF EXISTS " + DBContants.WEBSITE_TABLE_NAME);
-//        db.execSQL("DROP TABLE IF EXISTS " + DBContants.FEED_TABLE_NAME);
-//    }
+    public void updatePostStar(long postId, boolean isStared) {
+        db.beginTransaction();
+        Cursor c = null;
+        try {
+            // check if exists
+            c = db.rawQuery("SELECT * FROM " + DBContants.POST_TABLE_NAME + " WHERE " +
+                    DBContants.COLUMN_ID + " = ?", new String[]{String.valueOf(postId)});
+            ContentValues cv = new ContentValues();
+            cv.put(DBContants.POST_COLUMN_STARED, isStared ? 1 : 0);
+
+            if (c.moveToNext()) {
+                postId = c.getInt(c.getColumnIndex(DBContants.COLUMN_ID));
+                String[] args = {String.valueOf(postId)};
+                db.update(DBContants.POST_TABLE_NAME, cv, DBContants.COLUMN_ID + "=?", args);
+                Log.d("", "update post successful");
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+            db.endTransaction();
+        }
+    }
+
+    public void removeTable() {
+        db.execSQL("DROP TABLE IF EXISTS " + DBContants.WEBSITE_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + DBContants.POST_TABLE_NAME);
+    }
 
     public void closeDB() {
         db.close();
