@@ -24,12 +24,9 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import aaron.geist.myreader.R;
-import aaron.geist.myreader.constant.DBContants;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
 import aaron.geist.myreader.domain.Post;
@@ -215,15 +212,17 @@ public class MainActivity extends AppCompatActivity
     public void onTaskCompleted(Boolean crawlSuccess) {
         postRefresh.setRefreshing(false);
         adapterList.clear();
-
         adapterList.addAll(dbManager.getAllPostsBySiteId(siteId));
-        Log.d("", "load post title number=" + adapterList.size());
 
         adapter.notifyDataSetChanged();
     }
 
     @Override
     public void onRefresh() {
+        if (postRefresh.isRefreshing()) {
+            return;
+        }
+
         Website website = dbManager.getWebsiteById(siteId);
         AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
         crawler.response = this;
@@ -235,6 +234,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLoad() {
+        if (postRefresh.isRefreshing()) {
+            return;
+        }
+
         Website website = dbManager.getWebsiteById(siteId);
         AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
         crawler.response = this;

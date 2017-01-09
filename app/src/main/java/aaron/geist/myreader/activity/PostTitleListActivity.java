@@ -3,7 +3,6 @@ package aaron.geist.myreader.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -72,7 +71,7 @@ public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerR
             map.put(DBContants.COLUMN_ID, String.valueOf(post.getId()));
             adapterList.add(map);
         }
-        adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_list,
+        adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_item,
                 new String[]{DBContants.POST_COLUMN_TITLE}, new int[]{R.id.postTitle});
 
         listView.setAdapter(adapter);

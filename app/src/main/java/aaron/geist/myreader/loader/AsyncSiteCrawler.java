@@ -23,7 +23,7 @@ import aaron.geist.myreader.utils.FileDownloader;
 import aaron.geist.myreader.utils.UrlParser;
 
 /**
- * Created by yzhou7 on 2015/8/6.
+ * Created by Aaron on 2015/8/6.
  */
 public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean> {
 

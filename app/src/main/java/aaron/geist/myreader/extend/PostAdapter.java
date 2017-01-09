@@ -21,14 +21,14 @@ import aaron.geist.myreader.domain.Post;
 public class PostAdapter extends BaseAdapter {
 
     private Context context = null;
-    private final List<Post> posts = new ArrayList<>();
+    private List<Post> posts = null;
     private LayoutInflater inflater;
 
 
     public PostAdapter(Context context, List<Post> posts) {
         this.context = context;
         if (posts != null) {
-            this.posts.addAll(posts);
+            this.posts = posts;
         }
         inflater = LayoutInflater.from(context);
     }
@@ -52,7 +52,7 @@ public class PostAdapter extends BaseAdapter {
     public View getView(int i, View view, ViewGroup viewGroup) {
         ViewHolder viewHolder = null;
         if (view == null) {
-            view = inflater.inflate(R.layout.post_title_list, viewGroup, false);
+            view = inflater.inflate(R.layout.post_title_item, viewGroup, false);
             viewHolder = new ViewHolder();
 
             viewHolder.layout = (RelativeLayout) view.findViewById(R.id.content_main);
@@ -65,7 +65,7 @@ public class PostAdapter extends BaseAdapter {
         Post post = posts.get(i);
         viewHolder.textViewTile.setText(post.getTitle());
         if (post.isRead()) {
-            viewHolder.textViewTile.setTextColor(view.getResources().getColor(R.color.colorPrimary));
+            viewHolder.textViewTile.setTextColor(view.getResources().getColor(R.color.fontRead));
         }
 
         return view;

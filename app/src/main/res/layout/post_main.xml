@@ -20,12 +20,19 @@
             android:title=""
             app:popupTheme="@style/AppTheme.PopupOverlay">
 
-            <ImageButton
-                android:id="@+id/collectBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@drawable/unstar" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <ImageButton
+                    android:id="@+id/collectBtn"
+                    android:contentDescription="Button to set post as stared."
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginRight="15dp"
+                    android:layout_alignParentEnd="true"
+                    android:background="@drawable/unstar" />
+            </RelativeLayout>
+
         </android.support.v7.widget.Toolbar>
 
 
