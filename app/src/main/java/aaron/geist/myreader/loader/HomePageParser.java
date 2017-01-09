@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
+import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,6 +13,7 @@ import org.jsoup.select.Elements;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -143,7 +145,7 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
     }
 
     @Override
-    public void onTaskCompleted(Boolean crawlSuccess) {
+    public void onTaskCompleted(Boolean crawlSuccess, List<Post> posts, boolean isReverse) {
         Log.d("", "finish asyncSiteCrawler, result=" + crawlSuccess);
     }
 }

@@ -1,6 +1,7 @@
 package aaron.geist.myreader.activity;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
@@ -13,6 +14,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -43,7 +45,7 @@ public class MainActivity extends AppCompatActivity
     private RefreshLayout postRefresh = null;
     private BaseAdapter adapter = null;
     private DBManager dbManager = null;
-    private List<Post> adapterList = new ArrayList<Post>();
+    private List<Post> adapterList = new ArrayList<>();
 
     private Long siteId = -1L;
 
@@ -116,7 +118,8 @@ public class MainActivity extends AppCompatActivity
         postRefresh = (RefreshLayout) findViewById(R.id.postRefresh);
         postRefresh.setOnRefreshListener(this);
         postRefresh.setOnLoadListener(this);
-        postRefresh.setColorSchemeColors(R.color.colorAccent, R.color.colorPrimary, R.color.colorPrimaryDark);
+        postRefresh.setColorSchemeColors(getResources().getColor(R.color.lightRed),
+                getResources().getColor(R.color.lightBlue), getResources().getColor(R.color.lightYellow));
     }
 
     public void loadAllPostTitle(long siteId) {
@@ -142,7 +145,29 @@ public class MainActivity extends AppCompatActivity
                     dbManager.updatePostRead(selectedPost.getId(), true);
                     adapter.notifyDataSetChanged();
                 }
+            }
+        });
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int pos, long l) {
+                new AlertDialog.Builder(view.getContext()).setTitle("DELETE CURRENT POST?")
+                        .setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                Post selectPost = (Post) listView.getItemAtPosition(pos);
+                                dbManager.removePost(selectPost);
+                                adapterList.remove(selectPost);
+                                adapter.notifyDataSetChanged();
+                            }
+                        })
+                        .setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                            }
+                        })
+                        .show();
 
+                return true;
             }
         });
     }
@@ -209,20 +234,21 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onTaskCompleted(Boolean crawlSuccess) {
+    public void onTaskCompleted(Boolean crawlSuccess, List<Post> posts, boolean isReverse) {
         postRefresh.setRefreshing(false);
-        adapterList.clear();
-        adapterList.addAll(dbManager.getAllPostsBySiteId(siteId));
-
-        adapter.notifyDataSetChanged();
+        postRefresh.setLoading(false);
+        if (crawlSuccess) {
+            if (isReverse) {
+                adapterList.addAll(posts);
+            } else {
+                adapterList.addAll(0, posts);
+            }
+            adapter.notifyDataSetChanged();
+        }
     }
 
     @Override
     public void onRefresh() {
-        if (postRefresh.isRefreshing()) {
-            return;
-        }
-
         Website website = dbManager.getWebsiteById(siteId);
         AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
         crawler.response = this;
@@ -234,10 +260,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLoad() {
-        if (postRefresh.isRefreshing()) {
-            return;
-        }
-
         Website website = dbManager.getWebsiteById(siteId);
         AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
         crawler.response = this;

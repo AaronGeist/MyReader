@@ -23,7 +23,7 @@
         android:layout_gravity="center"
         android:gravity="center"
         android:paddingTop="5dip"
-        android:text="加载中"
+        android:text="正在用力地加载中"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:textColor="@android:color/darker_gray"
         android:textSize="14sp"

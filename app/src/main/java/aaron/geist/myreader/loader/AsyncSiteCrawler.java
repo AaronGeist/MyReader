@@ -12,7 +12,9 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import aaron.geist.myreader.constant.LoaderConstants;
 import aaron.geist.myreader.database.DBManager;
@@ -35,13 +37,16 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     private Website website = null;
     private int maxPostId = -1;
     private Boolean crawlSuccess = false;
+    private boolean isReverse = false;
     public AsyncSiteCrawlerResponse response = null;
+
+    private List<Post> newPosts = new ArrayList<>();
 
     /**
      * once we find the post id crawled is smaller than the max in DB.
      * we stop crawling.
      */
-    boolean stopCrawl = false;
+    private boolean stopCrawl = false;
 
     public AsyncSiteCrawler(Context ctx) {
         mgr = new DBManager(ctx);
@@ -58,31 +63,30 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     @Override
     protected void onPostExecute(Boolean crawlSuccess) {
-        response.onTaskCompleted(crawlSuccess);
+        response.onTaskCompleted(crawlSuccess, newPosts, isReverse);
     }
 
     public void crawl(boolean isReserve) {
         Log.d("", "start crawling site " + website.getName());
+        this.isReverse = isReserve;
 
+        int pageNum;
         if (!isReserve) {
             getMaxPostId();
-            int pageNum = 1;
-            while (!stopCrawl) {
-                crawlSinglePage(pageNum++);
-            }
+            pageNum = 1;
         } else {
             // find position of oldest post
             long minPostId = mgr.getMinPostIdByWebsite(website.getId());
-            int pageNum = 0;
+            pageNum = 0;
             int lastPostId;
             do {
                 // find the oldest page num
                 lastPostId = findLastPostInCurrentPage(++pageNum);
             } while (lastPostId >= minPostId);
+        }
 
-            while (!stopCrawl) {
-                crawlSinglePage(pageNum++);
-            }
+        while (!stopCrawl) {
+            newPosts = crawlSinglePage(pageNum++);
         }
         Log.d("", "finish crawling site " + website.getName());
     }
@@ -95,7 +99,8 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         maxPostId = mgr.getMaxPostIdByWebsite(website.getId());
     }
 
-    private void crawlSinglePage(int pageNum) {
+    private List<Post> crawlSinglePage(int pageNum) {
+        List<Post> postResults = new ArrayList<>();
         Log.d("", "crawling page " + website.getNavigationUrl() + pageNum);
         Document document = null;
         URL url = null;
@@ -130,13 +135,17 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
                 continue;
             }
 
-            crawlSinglePost(postUrl);
+            Post res = crawlSinglePost(postUrl);
+            if (res != null) {
+                postResults.add(res);
+            }
             cnt++;
             if (cnt > MAX_POST_NUM_TO_LOAD) {
                 stopCrawl = true;
             }
         }
         crawlSuccess = true;
+        return postResults;
     }
 
     private int findLastPostInCurrentPage(int pageNum) {
@@ -166,7 +175,8 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         return UrlParser.getPostId(lastPost.attr(HomePageParser.ATTR_HREF));
     }
 
-    private void crawlSinglePost(String urlStr) {
+    private Post crawlSinglePost(String urlStr) {
+        Post post = null;
         Document document = null;
         URL url = null;
         try {
@@ -193,7 +203,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         // if reach to the previous latest post, stop crawling.
         int currentPostId = UrlParser.getPostId(urlStr);
         if (currentPostId > maxPostId) {
-            Post post = new Post();
+            post = new Post();
             post.setUrl(urlStr);
             post.setTitle(titleStr);
             post.setContent(localizeImages(entry, website.getName(), currentPostId));
@@ -204,6 +214,8 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             Log.d("", "reach max post id, stop crawling.");
             stopCrawl = true;
         }
+
+        return post;
     }
 
     private String localizeImages(Element entry, String site, int postId) {

@@ -92,7 +92,7 @@ public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerR
     }
 
     @Override
-    public void onTaskCompleted(Boolean crawlSuccess) {
+    public void onTaskCompleted(Boolean crawlSuccess, List<Post> posts, boolean isReverse) {
         postRefresh.setRefreshing(false);
         adapterList.clear();
 
