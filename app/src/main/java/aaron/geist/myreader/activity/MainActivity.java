@@ -20,8 +20,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +34,7 @@ import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
 import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
+import aaron.geist.myreader.extend.PostAdapter;
 import aaron.geist.myreader.extend.RefreshLayout;
 import aaron.geist.myreader.loader.AsyncSiteCrawler;
 import aaron.geist.myreader.loader.AsyncSiteCrawlerResponse;
@@ -43,9 +44,9 @@ public class MainActivity extends AppCompatActivity
 
     private ListView listView = null;
     private RefreshLayout postRefresh = null;
-    private SimpleAdapter adapter = null;
+    private BaseAdapter adapter = null;
     private DBManager dbManager = null;
-    private List<Map<String, String>> adapterList = new ArrayList<Map<String, String>>();
+    private List<Post> adapterList = new ArrayList<Post>();
 
     private Long siteId = -1L;
 
@@ -123,32 +124,28 @@ public class MainActivity extends AppCompatActivity
 
     public void loadAllPostTitle(long siteId) {
 
-        List<Post> postList = dbManager.getAllPostsBySiteId(siteId);
-        Log.d("", "load post title number=" + postList.size());
+        adapterList = dbManager.getAllPostsBySiteId(siteId);
+        Log.d("", "load post title number=" + adapterList.size());
 
-        for (Post post : postList) {
-            Map<String, String> map = new HashMap<String, String>();
-            map.put(DBContants.POST_COLUMN_TITLE, post.getTitle());
-            map.put(DBContants.COLUMN_ID, String.valueOf(post.getId()));
-            adapterList.add(map);
-        }
-        adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_list,
-                new String[]{DBContants.POST_COLUMN_TITLE}, new int[]{R.id.postTitle});
-//        adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_list,
-//                new String[]{DBContants.POST_COLUMN_TITLE, DBContants.COLUMN_ID}, new int[]{R.id.postTitle, R.id.postId});
+        adapter = new PostAdapter(this, adapterList);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
-                Map<String, String> map = (Map<String, String>) listView.getItemAtPosition(pos);
-                long postId = Long.valueOf(map.get(DBContants.COLUMN_ID));
-
-                Log.d("", "select post id=" + postId);
+                Post selectedPost = (Post) listView.getItemAtPosition(pos);
 
                 Intent intent = new Intent();
-                intent.putExtra(DBContants.COLUMN_ID, postId);
+                intent.putExtra(PostActivity.POST_ITEM, selectedPost);
                 intent.setClass(view.getContext(), PostActivity.class);
                 startActivity(intent);
+
+                // update post as read
+                if (!selectedPost.isRead()) {
+                    selectedPost.setRead(true);
+                    dbManager.updatePostRead(selectedPost.getId(), true);
+                    adapter.notifyDataSetChanged();
+                }
+
             }
         });
     }
@@ -219,15 +216,9 @@ public class MainActivity extends AppCompatActivity
         postRefresh.setRefreshing(false);
         adapterList.clear();
 
-        List<Post> postList = dbManager.getAllPostsBySiteId(siteId);
-        Log.d("", "load post title number=" + postList.size());
+        adapterList.addAll(dbManager.getAllPostsBySiteId(siteId));
+        Log.d("", "load post title number=" + adapterList.size());
 
-        for (Post post : postList) {
-            Map<String, String> map = new HashMap<String, String>();
-            map.put(DBContants.POST_COLUMN_TITLE, post.getTitle());
-            map.put(DBContants.COLUMN_ID, String.valueOf(post.getId()));
-            adapterList.add(map);
-        }
         adapter.notifyDataSetChanged();
     }
 

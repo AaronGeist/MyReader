@@ -1,9 +1,13 @@
 package aaron.geist.myreader.domain;
 
+import java.io.Serializable;
+
 /**
  * Created by Aaron on 2015/7/27.
  */
-public class Post {
+public class Post implements Serializable {
+
+    private static final long serialVersionUID = 9150231278934934185L;
 
     private long id;
     private String title;

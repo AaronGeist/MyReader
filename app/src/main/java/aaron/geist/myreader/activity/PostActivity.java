@@ -11,7 +11,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import aaron.geist.myreader.R;
-import aaron.geist.myreader.constant.DBContants;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.Post;
 
@@ -21,9 +20,10 @@ import aaron.geist.myreader.domain.Post;
 public class PostActivity extends AppCompatActivity {
 
     private DBManager dbManager = null;
-    private long postId = -1;
     private Post currentPost = null;
     private ImageButton collectBtn = null;
+
+    public static final String POST_ITEM = "postItem";
 
     /**
      * Called when the activity is first created.
@@ -45,17 +45,17 @@ public class PostActivity extends AppCompatActivity {
         collectBtn = (ImageButton) findViewById(R.id.collectBtn);
 
         Intent intent = this.getIntent();
-        postId = intent.getLongExtra(DBContants.COLUMN_ID, 0);
+        currentPost = (Post) intent.getSerializableExtra(POST_ITEM);
         dbManager = new DBManager(this);
-        loadPost(postId);
+        showPost(currentPost);
 
         setBtnListener();
     }
 
-    private void loadPost(long postId) {
-        Log.d("", "Loading post id=" + postId);
-        currentPost = dbManager.getSinglePost(postId);
+    private void showPost(Post post) {
+        Log.d("", "Loading post id=" + post.getId());
 
+        currentPost = dbManager.getSinglePost(currentPost.getId());
         final TextView title = (TextView) findViewById(R.id.singlePostTitle);
         title.setText(currentPost.getTitle());
         final WebView content = (WebView) findViewById(R.id.singlePostContent);
@@ -70,10 +70,9 @@ public class PostActivity extends AppCompatActivity {
         collectBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                currentPost.setStared(!currentPost.isStarted());
-                Post post = dbManager.getSinglePost(postId);
-                dbManager.updatePostStar(postId, !post.isStarted());
-                collectBtn.setBackground(!post.isStarted() ? getDrawable(R.drawable.star) : getDrawable(R.drawable.unstar));
+                currentPost.setStared(!currentPost.isStarted());
+                dbManager.updatePostStar(currentPost.getId(), currentPost.isStarted());
+                collectBtn.setBackground(currentPost.isStarted() ? getDrawable(R.drawable.star) : getDrawable(R.drawable.unstar));
             }
         });
     }
