@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity
     private BaseAdapter adapter = null;
     private DBManager dbManager = null;
     private List<Post> adapterList = new ArrayList<>();
+    private int pageNum = 1;
 
     private Long siteId = -1L;
 
@@ -124,7 +125,7 @@ public class MainActivity extends AppCompatActivity
 
     public void loadAllPostTitle(long siteId) {
 
-        adapterList = dbManager.getAllPostsBySiteId(siteId);
+        adapterList = dbManager.getPosts(pageNum);
         Log.d("", "load post title number=" + adapterList.size());
 
         adapter = new PostAdapter(this, adapterList);
@@ -260,6 +261,13 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLoad() {
+        // load local DB first
+        List<Post> posts = dbManager.getPosts(++pageNum);
+        if (posts.size() > 0) {
+            this.onTaskCompleted(true, posts, true);
+        }
+
+        // if all loaded, then load from online
         Website website = dbManager.getWebsiteById(siteId);
         AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
         crawler.response = this;

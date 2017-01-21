@@ -1,7 +1,7 @@
 package aaron.geist.myreader.constant;
 
 /**
- * Created by yzhou7 on 2015/8/7.
+ * Created by Aaron on 2015/8/7.
  */
 public class LoaderConstants {
 

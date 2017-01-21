@@ -162,6 +162,27 @@ public class DBManager {
         return posts;
     }
 
+    public List<Post> getPosts(int pageNum) {
+        List<Post> posts = new ArrayList<Post>();
+        Cursor c = db.query(DBContants.POST_TABLE_NAME, null, null, null, null, null,
+                DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
+                (pageNum - 1) * DBContants.pageSize + "," + DBContants.pageSize);
+        while (c.moveToNext()) {
+            Post post = new Post();
+            post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));
+            post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
+            post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
+            post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
+            post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
+            post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
+            post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
+            post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
+            posts.add(post);
+        }
+        c.close();
+        return posts;
+    }
+
     public Post getSinglePost(long postId) {
         Post post = null;
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
