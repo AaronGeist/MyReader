@@ -5,6 +5,7 @@ package aaron.geist.myreader.extend;
  */
 
 import android.content.Context;
+import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -52,6 +53,10 @@ public class RefreshLayout extends SwipeRefreshLayout implements AbsListView.OnS
      * 抬起时的y坐标, 与mYDown一起用于滑动到底部时判断是上拉还是下拉
      */
     private int mLastY;
+
+    private int mStartPosition;
+    private boolean down;
+
     /**
      * 是否在加载中 ( 上拉加载更多 )
      */
@@ -111,11 +116,15 @@ public class RefreshLayout extends SwipeRefreshLayout implements AbsListView.OnS
             case MotionEvent.ACTION_DOWN:
                 // 按下
                 mYDown = (int) event.getRawY();
+                mStartPosition = mYDown;
                 break;
 
             case MotionEvent.ACTION_MOVE:
                 // 移动
                 mLastY = (int) event.getRawY();
+                if (canScrollDown() && isPullUp()) {
+                    mStartPosition = mLastY;
+                }
                 break;
 
             case MotionEvent.ACTION_UP:
@@ -137,7 +146,7 @@ public class RefreshLayout extends SwipeRefreshLayout implements AbsListView.OnS
      * @return
      */
     private boolean canLoad() {
-        return isBottom() && !isLoading && isPullUp();
+        return isBottom() && !isLoading && isPullUp() && isOverScroll();
     }
 
     /**
@@ -158,6 +167,20 @@ public class RefreshLayout extends SwipeRefreshLayout implements AbsListView.OnS
      */
     private boolean isPullUp() {
         return (mYDown - mLastY) >= mTouchSlop;
+    }
+
+    private boolean canScrollDown() {
+        if (mListView == null) {
+            return false;
+        }
+
+        return ViewCompat.canScrollVertically(mListView, 1);
+    }
+
+    private boolean isOverScroll() {
+        Log.d("", "mLastY=" + mLastY + ", mStartPosition=" + mStartPosition);
+        boolean res = (mStartPosition - mLastY) >= 800;
+        return res;
     }
 
     /**

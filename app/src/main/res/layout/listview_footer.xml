@@ -13,20 +13,19 @@
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
-        android:paddingRight="100dp"
         android:indeterminate="true" />
 
-    <TextView
-        android:id="@+id/pull_to_refresh_loadmore_text"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:paddingTop="5dip"
-        android:text="正在用力地加载中"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+    <!--<TextView-->
+        <!--android:id="@+id/pull_to_refresh_loadmore_text"-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center"-->
+        <!--android:gravity="center"-->
+        <!--android:paddingTop="5dip"-->
+        <!--android:text="正在用力地加载中"-->
+        <!--android:textAppearance="?android:attr/textAppearanceMedium"-->
+        <!--android:textColor="@android:color/darker_gray"-->
+        <!--android:textSize="14sp"-->
+        <!--android:textStyle="bold" />-->
 
 </RelativeLayout>
