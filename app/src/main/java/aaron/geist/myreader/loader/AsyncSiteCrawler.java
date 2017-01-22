@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -40,13 +41,13 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     private boolean isReverse = false;
     public AsyncSiteCrawlerResponse response = null;
 
-    private List<Post> newPosts = new ArrayList<>();
+    private final List<Post> newPosts = new ArrayList<>();
 
     /**
      * once we find the post id crawled is smaller than the max in DB.
      * we stop crawling.
      */
-    private boolean stopCrawl = false;
+    private volatile boolean stopCrawl = false;
 
     public AsyncSiteCrawler(Context ctx) {
         mgr = new DBManager(ctx);
@@ -55,6 +56,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     @Override
     protected Boolean doInBackground(CrawlerRequest... requests) {
         if (requests.length > 0) {
+            newPosts.clear();
             this.website = requests[0].getWebsite();
             crawl(requests[0].isReverse());
         }
@@ -71,22 +73,30 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         this.isReverse = isReserve;
 
         int pageNum;
+        int step = isReverse ? 1 : -1;
         if (!isReserve) {
             getMaxPostId();
-            pageNum = 1;
-        } else {
-            // find position of oldest post
-            long minPostId = mgr.getMinPostIdByWebsite(website.getId());
+            long targetPostId = mgr.getMaxPostIdByWebsite(website.getId());
             pageNum = 0;
             int lastPostId;
             do {
-                // find the oldest page num
                 lastPostId = findLastPostInCurrentPage(++pageNum);
-            } while (lastPostId >= minPostId);
+            } while (lastPostId >= targetPostId);
+        } else {
+            // find position of oldest post
+            long targetPostId = mgr.getMinPostIdByWebsite(website.getId());
+            pageNum = 0;
+            int lastPostId;
+            do {
+                // find the page num which contains the target post
+                lastPostId = findLastPostInCurrentPage(++pageNum);
+            } while (lastPostId >= targetPostId);
         }
 
+        // TODO define max pageNum?
         while (!stopCrawl) {
-            newPosts = crawlSinglePage(pageNum++);
+            crawlSinglePage(pageNum, newPosts);
+            pageNum += step;
         }
         Log.d("", "finish crawling site " + website.getName());
     }
@@ -99,8 +109,12 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         maxPostId = mgr.getMaxPostIdByWebsite(website.getId());
     }
 
-    private List<Post> crawlSinglePage(int pageNum) {
-        List<Post> postResults = new ArrayList<>();
+    private void crawlSinglePage(int pageNum, List<Post> postResults) {
+        if (pageNum <= 0) {
+            stopCrawl = true;
+            return;
+        }
+
         Log.d("", "crawling page " + website.getNavigationUrl() + pageNum);
         Document document = null;
         URL url = null;
@@ -116,18 +130,22 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             Log.d("", "IOException: " + e.getMessage());
         }
 
-        Log.d("", "finish loading page " + website.getNavigationUrl() + pageNum);
         Element body = document.body();
-        Log.d("", "post entry tag=" + website.getPostEntryTag());
         Elements posts = body.select(website.getPostEntryTag());
 
+        List<Element> postList = posts.subList(0, posts.size() - 1);
+        // if we try to pull latest posts, we find max postId in DB is n,
+        // then we trying to find n-1, n-2...n-m, in which m is the max post num to load
+        // so the list is reversed here.
+        if (!isReverse) {
+            Collections.reverse(postList);
+        }
+
         Log.d("", "find post number=" + posts.size());
-        Iterator<Element> iterator = posts.iterator();
         Element post;
         String postUrl;
-        int cnt = 0;
-        while (!stopCrawl && iterator.hasNext()) {
-            post = iterator.next();
+        for (int i = 0, size = postList.size(); i < size && !stopCrawl; i++) {
+            post = postList.get(i);
             postUrl = post.attr(HomePageParser.ATTR_HREF);
 
             // post already exists
@@ -139,13 +157,11 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             if (res != null) {
                 postResults.add(res);
             }
-            cnt++;
-            if (cnt > MAX_POST_NUM_TO_LOAD) {
+            if (postResults.size() >= MAX_POST_NUM_TO_LOAD) {
                 stopCrawl = true;
             }
         }
         crawlSuccess = true;
-        return postResults;
     }
 
     private int findLastPostInCurrentPage(int pageNum) {
@@ -199,21 +215,14 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         String titleStr = title.ownText();
         Element entry = body.getElementsByClass(CLASS_ENTRY).first();
 
-        // assume that the post id is always increasing.
-        // if reach to the previous latest post, stop crawling.
         int currentPostId = UrlParser.getPostId(urlStr);
-        if (currentPostId > maxPostId) {
-            post = new Post();
-            post.setUrl(urlStr);
-            post.setTitle(titleStr);
-            post.setContent(localizeImages(entry, website.getName(), currentPostId));
-            post.setExternalId(currentPostId);
-            post.setWebsiteId(website.getId());
-            mgr.addPost(post);
-        } else {
-            Log.d("", "reach max post id, stop crawling.");
-            stopCrawl = true;
-        }
+        post = new Post();
+        post.setUrl(urlStr);
+        post.setTitle(titleStr);
+        post.setContent(localizeImages(entry, website.getName(), currentPostId));
+        post.setExternalId(currentPostId);
+        post.setWebsiteId(website.getId());
+        mgr.addPost(post);
 
         return post;
     }

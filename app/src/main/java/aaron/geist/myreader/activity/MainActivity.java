@@ -24,9 +24,12 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.database.DBManager;
@@ -47,6 +50,7 @@ public class MainActivity extends AppCompatActivity
     private DBManager dbManager = null;
     private List<Post> adapterList = new ArrayList<>();
     private int pageNum = 1;
+    private Map<Long, Integer> initPostIdMap = new HashMap<>();
 
     private Long siteId = -1L;
 
@@ -125,7 +129,10 @@ public class MainActivity extends AppCompatActivity
 
     public void loadAllPostTitle(long siteId) {
 
-        adapterList = dbManager.getPosts(pageNum);
+        Integer initPostId = dbManager.getMaxPostIdByWebsite(siteId);
+        initPostIdMap.put(siteId, initPostId);
+
+        adapterList = dbManager.getPosts(pageNum, initPostId);
         Log.d("", "load post title number=" + adapterList.size());
 
         adapter = new PostAdapter(this, adapterList);
@@ -261,10 +268,15 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLoad() {
+        // TODO load all sites
+        Integer initPostId = initPostIdMap.get(dbManager.getAllWebsites().get(0).getId());
+
         // load local DB first
-        List<Post> posts = dbManager.getPosts(++pageNum);
+        List<Post> posts = dbManager.getPosts(++pageNum, initPostId);
         if (posts.size() > 0) {
+            Toast.makeText(this, "Load posts:" + posts.size(), Toast.LENGTH_SHORT).show();
             this.onTaskCompleted(true, posts, true);
+            return;
         }
 
         // if all loaded, then load from online

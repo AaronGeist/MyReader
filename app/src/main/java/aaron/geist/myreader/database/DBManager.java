@@ -122,9 +122,6 @@ public class DBManager {
 
             } else {
                 postId = db.insert(DBContants.POST_TABLE_NAME, null, cv);
-//                db.execSQL("INSERT INTO " + DBContants.POST_TABLE_NAME + " VALUES(NULL, ?, ?, ?, ?, ?)",
-//                        new Object[]{post.getTitle(), post.getContent(), post.getExternalId(),
-//                                post.getUrl(), post.getWebsiteId()});
                 Log.d("", "insert post successful");
             }
             db.setTransactionSuccessful();
@@ -162,9 +159,9 @@ public class DBManager {
         return posts;
     }
 
-    public List<Post> getPosts(int pageNum) {
+    public List<Post> getPosts(int pageNum, int startPostExtId) {
         List<Post> posts = new ArrayList<Post>();
-        Cursor c = db.query(DBContants.POST_TABLE_NAME, null, null, null, null, null,
+        Cursor c = db.query(DBContants.POST_TABLE_NAME, null, DBContants.POST_COLUMN_EXTERNAL_ID + "<=" + startPostExtId, null, null, null,
                 DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
                 (pageNum - 1) * DBContants.pageSize + "," + DBContants.pageSize);
         while (c.moveToNext()) {
