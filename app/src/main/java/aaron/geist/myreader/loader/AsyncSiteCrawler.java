@@ -32,20 +32,21 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     public static final String CLASS_ENTRY = "entry";
 
-    private static final int MAX_POST_NUM_TO_LOAD = 1;
+    private static final int MAX_POST_NUM_TO_LOAD = 2;
 
     private DBManager mgr;
     private Website website = null;
-    private int maxPostId = -1;
     private Boolean crawlSuccess = false;
     private boolean isReverse = false;
     public AsyncSiteCrawlerResponse response = null;
-
-    private final List<Post> newPosts = new ArrayList<>();
+    private final List<Post> crawledPosts = new ArrayList<>();
 
     /**
-     * once we find the post id crawled is smaller than the max in DB.
-     * we stop crawling.
+     * signal to stop crawling when:
+     * <ul>
+     * <li>reach limit of posts to load in one time</li>
+     * <li>reach first page or last page</li>
+     * </ul>
      */
     private volatile boolean stopCrawl = false;
 
@@ -56,7 +57,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     @Override
     protected Boolean doInBackground(CrawlerRequest... requests) {
         if (requests.length > 0) {
-            newPosts.clear();
+            crawledPosts.clear();
             this.website = requests[0].getWebsite();
             crawl(requests[0].isReverse());
         }
@@ -65,56 +66,35 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     @Override
     protected void onPostExecute(Boolean crawlSuccess) {
-        response.onTaskCompleted(crawlSuccess, newPosts, isReverse);
+        response.onTaskCompleted(crawlSuccess, crawledPosts, isReverse);
     }
 
     public void crawl(boolean isReserve) {
         Log.d("", "start crawling site " + website.getName());
         this.isReverse = isReserve;
 
-        int pageNum;
+        int pageNum = 0;
         int step = isReverse ? 1 : -1;
-        if (!isReserve) {
-            getMaxPostId();
-            long targetPostId = mgr.getMaxPostIdByWebsite(website.getId());
-            pageNum = 0;
-            int lastPostId;
-            do {
-                lastPostId = findLastPostInCurrentPage(++pageNum);
-            } while (lastPostId >= targetPostId);
-        } else {
-            // find position of oldest post
-            long targetPostId = mgr.getMinPostIdByWebsite(website.getId());
-            pageNum = 0;
-            int lastPostId;
-            do {
-                // find the page num which contains the target post
-                lastPostId = findLastPostInCurrentPage(++pageNum);
-            } while (lastPostId >= targetPostId);
-        }
 
-        // TODO define max pageNum?
+        long targetPostId = isReserve ? mgr.getMinPostIdByWebsite(website.getId())
+                : mgr.getMaxPostIdByWebsite(website.getId());
+
+        // find page num of targetPostId
+        int lastPostId;
+        do {
+            // TODO pageNum might be cached, so that next search wouldn't take too long
+            lastPostId = findLastPostInCurrentPage(++pageNum);
+        } while (lastPostId > targetPostId);
+
         while (!stopCrawl) {
-            crawlSinglePage(pageNum, newPosts);
+            crawlSinglePage(pageNum, crawledPosts);
             pageNum += step;
         }
+
         Log.d("", "finish crawling site " + website.getName());
     }
 
-    /**
-     * Get max post id (parsed from post link) in database.
-     * This id represents the latest post..
-     */
-    private void getMaxPostId() {
-        maxPostId = mgr.getMaxPostIdByWebsite(website.getId());
-    }
-
     private void crawlSinglePage(int pageNum, List<Post> postResults) {
-        if (pageNum <= 0) {
-            stopCrawl = true;
-            return;
-        }
-
         Log.d("", "crawling page " + website.getNavigationUrl() + pageNum);
         Document document = null;
         URL url = null;
@@ -132,6 +112,12 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
         Element body = document.body();
         Elements posts = body.select(website.getPostEntryTag());
+
+        // no longer valid pageNum, being zero or exceeding the maximum
+        if (posts.size() == 0) {
+            stopCrawl = true;
+            return;
+        }
 
         List<Element> postList = posts.subList(0, posts.size() - 1);
         // if we try to pull latest posts, we find max postId in DB is n,
@@ -155,7 +141,12 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
             Post res = crawlSinglePost(postUrl);
             if (res != null) {
-                postResults.add(res);
+                if (!isReverse) {
+                    postResults.add(0, res);
+                } else {
+                    postResults.add(res);
+
+                }
             }
             if (postResults.size() >= MAX_POST_NUM_TO_LOAD) {
                 stopCrawl = true;
