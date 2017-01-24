@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity
     private BaseAdapter adapter = null;
     private DBManager dbManager = null;
     private List<Post> adapterList = new ArrayList<>();
-    private int pageNum = 1;
+    private int currentDBPageNum = 1;
     private Map<Long, Integer> initPostIdMap = new HashMap<>();
 
     private Long siteId = -1L;
@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity
         Integer initPostId = dbManager.getMaxPostIdByWebsite(siteId);
         initPostIdMap.put(siteId, initPostId);
 
-        adapterList = dbManager.getPosts(pageNum, initPostId);
+        adapterList = dbManager.getPosts(currentDBPageNum, initPostId);
         Log.d("", "load post title number=" + adapterList.size());
 
         adapter = new PostAdapter(this, adapterList);
@@ -272,7 +272,7 @@ public class MainActivity extends AppCompatActivity
         Integer initPostId = initPostIdMap.get(dbManager.getAllWebsites().get(0).getId());
 
         // load local DB first
-        List<Post> posts = dbManager.getPosts(++pageNum, initPostId);
+        List<Post> posts = dbManager.getPosts(++currentDBPageNum, initPostId);
         if (posts.size() > 0) {
             Toast.makeText(this, "Load posts:" + posts.size(), Toast.LENGTH_SHORT).show();
             this.onTaskCompleted(true, posts, true);

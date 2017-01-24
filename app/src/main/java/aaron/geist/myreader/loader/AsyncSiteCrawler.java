@@ -32,7 +32,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     public static final String CLASS_ENTRY = "entry";
 
-    private static final int MAX_POST_NUM_TO_LOAD = 2;
+    private static final int MAX_POST_NUM_TO_LOAD = 20;
 
     private DBManager mgr;
     private Website website = null;
@@ -79,12 +79,17 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         long targetPostId = isReserve ? mgr.getMinPostIdByWebsite(website.getId())
                 : mgr.getMaxPostIdByWebsite(website.getId());
 
-        // find page num of targetPostId
-        int lastPostId;
-        do {
-            // TODO pageNum might be cached, so that next search wouldn't take too long
-            lastPostId = findLastPostInCurrentPage(++pageNum);
-        } while (lastPostId > targetPostId);
+        if (targetPostId > 0) {
+            // find page num of targetPostId
+            int lastPostId;
+            do {
+                // TODO pageNum might be cached, so that next search wouldn't take too long
+                lastPostId = findLastPostInCurrentPage(++pageNum);
+            } while (lastPostId > targetPostId);
+        } else {
+            // first time to crawl posts
+            pageNum = 1;
+        }
 
         while (!stopCrawl) {
             crawlSinglePage(pageNum, crawledPosts);
@@ -95,6 +100,11 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     }
 
     private void crawlSinglePage(int pageNum, List<Post> postResults) {
+        if (pageNum <= 0) {
+            stopCrawl = true;
+            return;
+        }
+
         Log.d("", "crawling page " + website.getNavigationUrl() + pageNum);
         Document document = null;
         URL url = null;
@@ -119,7 +129,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             return;
         }
 
-        List<Element> postList = posts.subList(0, posts.size() - 1);
+        List<Element> postList = posts.subList(0, posts.size());
         // if we try to pull latest posts, we find max postId in DB is n,
         // then we trying to find n-1, n-2...n-m, in which m is the max post num to load
         // so the list is reversed here.
