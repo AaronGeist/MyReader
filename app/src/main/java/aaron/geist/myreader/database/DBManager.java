@@ -41,6 +41,7 @@ public class DBManager {
             cv.put(DBContants.WEBSITE_COLUMN_HOMEPAGE, website.getHomePage());
             cv.put(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG, website.getPostEntryTag());
             cv.put(DBContants.WEBSITE_COLUMN_NAVIGATION_URL, website.getNavigationUrl());
+            cv.put(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST, website.getInnerPostSelect());
 
             if (c.moveToNext()) {
                 siteId = c.getInt(c.getColumnIndex(DBContants.COLUMN_ID));
@@ -78,6 +79,7 @@ public class DBManager {
             website.setHomePage(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_HOMEPAGE)));
             website.setPostEntryTag(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG)));
             website.setNavigationUrl(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAVIGATION_URL)));
+            website.setInnerPostSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST)));
             websites.add(website);
         }
         c.close();
@@ -94,6 +96,7 @@ public class DBManager {
             website.setHomePage(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_HOMEPAGE)));
             website.setPostEntryTag(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG)));
             website.setNavigationUrl(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAVIGATION_URL)));
+            website.setInnerPostSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST)));
         }
         c.close();
         return website;
@@ -113,6 +116,7 @@ public class DBManager {
             cv.put(DBContants.POST_COLUMN_EXTERNAL_ID, post.getExternalId());
             cv.put(DBContants.POST_COLUMN_URL, post.getUrl());
             cv.put(DBContants.POST_COLUMN_WEBSITE_ID, post.getWebsiteId());
+            cv.put(DBContants.POST_COLUMN_IN_ORDER, post.isInOrder());
 
             if (c.moveToNext()) {
                 postId = c.getInt(c.getColumnIndex(DBContants.COLUMN_ID));
@@ -153,6 +157,7 @@ public class DBManager {
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
             post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
+            post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
             posts.add(post);
         }
         c.close();
@@ -174,6 +179,7 @@ public class DBManager {
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
             post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
+            post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
             posts.add(post);
         }
         c.close();
@@ -194,6 +200,7 @@ public class DBManager {
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
             post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
+            post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
         }
         c.close();
         return post;
@@ -229,7 +236,8 @@ public class DBManager {
         int result = -1;
         Cursor c = db.query(DBContants.POST_TABLE_NAME,
                 new String[]{"MAX(" + DBContants.POST_COLUMN_EXTERNAL_ID + ")"},
-                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId, null, null, null, null);
+                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId + " AND "
+                        + DBContants.POST_COLUMN_IN_ORDER + "=1", null, null, null, null);
         try {
             c.moveToNext();
             result = c.getInt(0);
@@ -244,7 +252,8 @@ public class DBManager {
         int result = -1;
         Cursor c = db.query(DBContants.POST_TABLE_NAME,
                 new String[]{"MIN(" + DBContants.POST_COLUMN_EXTERNAL_ID + ")"},
-                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId, null, null, null, null);
+                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId + " AND "
+                        + DBContants.POST_COLUMN_IN_ORDER + "=1", null, null, null, null);
         try {
             c.moveToNext();
             result = c.getInt(0);

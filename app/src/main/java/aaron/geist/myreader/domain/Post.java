@@ -20,6 +20,7 @@ public class Post implements Serializable {
     private long websiteId;
     private boolean stared;
     private boolean read;
+    private boolean inOrder;
 
     public long getId() {
         return id;
@@ -83,5 +84,13 @@ public class Post implements Serializable {
 
     public void setRead(boolean read) {
         this.read = read;
+    }
+
+    public boolean isInOrder() {
+        return inOrder;
+    }
+
+    public void setInOrder(boolean inOrder) {
+        this.inOrder = inOrder;
     }
 }

@@ -2,10 +2,13 @@ package aaron.geist.myreader.loader;
 
 import android.content.Context;
 import android.util.Log;
+
+import aaron.geist.myreader.constant.SiteConfig;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
 import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
+
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -28,20 +31,20 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
     public static final String CLASS_NAVI = "navigation";
     public static final String ATTR_HREF = "href";
 
-    private String homePageUrl;
     private String className = this.getClass().getSimpleName();
     private Element head = null;
     private Element body = null;
     private Website website = null;
     private DBManager mgr;
     private Context ctx = null;
+    private SiteConfig siteConfig = null;
 
-    public HomePageParser(String homePageUrl, Context context) {
+    public HomePageParser(SiteConfig siteConfig, Context context) {
+        this.siteConfig = siteConfig;
         ctx = context;
         mgr = new DBManager(context);
         website = new Website();
-        website.setHomePage(homePageUrl);
-        this.homePageUrl = homePageUrl;
+        website.setHomePage(siteConfig.getUrl());
     }
 
     public void parse() {
@@ -49,7 +52,7 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
         Document document = null;
         URL url = null;
         try {
-            url = new URL(this.homePageUrl);
+            url = new URL(this.siteConfig.getUrl());
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -67,25 +70,30 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
     }
 
     private void parsePostEntryClassName() {
-        Elements posts = body.getElementsByClass(CLASS_POST);
-        Element post = posts.first();
-        Elements links = post.getElementsByTag(TAG_LINK);
-        Iterator<Element> iterator = links.iterator();
-        Element link = null;
-        String className = "";
-        while (iterator.hasNext()) {
-            link = iterator.next();
-            className = link.className();
-            if (!"".equals(className)) {
-                break;
+        if (this.siteConfig.getPostSelect() == null) {
+            Elements posts = body.getElementsByClass(this.siteConfig.getPostSelect());
+            Element post = posts.first();
+            Elements links = post.getElementsByTag(TAG_LINK);
+            Iterator<Element> iterator = links.iterator();
+            Element link = null;
+            String className = "";
+            while (iterator.hasNext()) {
+                link = iterator.next();
+                className = link.className();
+                if (!"".equals(className)) {
+                    break;
+                }
             }
-        }
 
-        if (className != "") {
-            Log.d(this.className, "Find post Entry class name=" + className);
-            website.setPostEntryTag("." + CLASS_POST + " ." + className);
+            if (className != "" && this.siteConfig.getPostSelect() != null) {
+                Log.d(this.className, "Find post Entry class name=" + className);
+                website.setPostEntryTag("." + this.siteConfig.getPostSelect() + " ." + className);
+            } else {
+                Log.d(this.className, "Failed to find post Entry class name");
+            }
         } else {
-            Log.d(this.className, "Failed to find post Entry class name");
+            website.setPostEntryTag(this.siteConfig.getPostSelect());
+            website.setInnerPostSelect(this.siteConfig.getInnerPostSelect());
         }
     }
 
@@ -93,7 +101,7 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
      * parse navigation url pattern with specified tag name and class.
      */
     private void parseNavigationUrl() {
-        Elements navis = body.getElementsByClass(CLASS_NAVI);
+        Elements navis = body.getElementsByClass(this.siteConfig.getNavigationClassName());
         if (navis != null) {
             Element navi = navis.first();
             if (navi != null) {
@@ -106,8 +114,12 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
                     Pattern p = Pattern.compile("^(.*[=/]+)(\\d+)[/]*$");
                     Matcher m = p.matcher(nextPageUrl);
                     if (m.matches()) {
+                        String naviUrl = m.group(1);
+                        if (naviUrl.startsWith("/")) {
+                            naviUrl = this.siteConfig.getRootUrl() + naviUrl;
+                        }
                         Log.d(className, "Find navigation url=" + m.group(1));
-                        website.setNavigationUrl(m.group(1));
+                        website.setNavigationUrl(naviUrl);
                     }
                 }
             }

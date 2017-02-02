@@ -32,7 +32,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     public static final String CLASS_ENTRY = "entry";
 
-    private static final int MAX_POST_NUM_TO_LOAD = 20;
+    private static final int MAX_POST_NUM_TO_LOAD = 10;
 
     private DBManager mgr;
     private Website website = null;
@@ -92,14 +92,14 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         }
 
         while (!stopCrawl) {
-            crawlSinglePage(pageNum, crawledPosts);
+            crawlSinglePage(pageNum, targetPostId, crawledPosts);
             pageNum += step;
         }
 
         Log.d("", "finish crawling site " + website.getName());
     }
 
-    private void crawlSinglePage(int pageNum, List<Post> postResults) {
+    private void crawlSinglePage(int pageNum, long targetPostId, List<Post> postResults) {
         if (pageNum <= 0) {
             stopCrawl = true;
             return;
@@ -152,11 +152,13 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             Post res = crawlSinglePost(postUrl);
             if (res != null) {
                 if (!isReverse) {
+                    res.setInOrder(res.getExternalId() > targetPostId);
                     postResults.add(0, res);
                 } else {
+                    res.setInOrder(res.getExternalId() < targetPostId);
                     postResults.add(res);
-
                 }
+                mgr.addPost(res);
             }
             if (postResults.size() >= MAX_POST_NUM_TO_LOAD) {
                 stopCrawl = true;
@@ -214,7 +216,10 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         Element head = document.head();
         Element title = head.getElementsByTag(HomePageParser.TAG_TITLE).first();
         String titleStr = title.ownText();
-        Element entry = body.getElementsByClass(CLASS_ENTRY).first();
+        Element entry = body.select(CLASS_ENTRY).first();
+        if (entry == null) {
+            entry = body.select(website.getInnerPostSelect()).first();
+        }
 
         int currentPostId = UrlParser.getPostId(urlStr);
         post = new Post();
@@ -223,7 +228,6 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         post.setContent(localizeImages(entry, website.getName(), currentPostId));
         post.setExternalId(currentPostId);
         post.setWebsiteId(website.getId());
-        mgr.addPost(post);
 
         return post;
     }

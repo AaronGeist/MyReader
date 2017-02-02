@@ -6,7 +6,7 @@ package aaron.geist.myreader.constant;
 public class TestConstants {
 
 //    public static final String TestRssUrl = "http://www.importnew.com/all-posts";
-    public static final String TestRssUrl = "http://blog.jobbole.com/all-posts";
-
+//    public static final String TestRssUrl = "http://blog.jobbole.com/all-posts";
+    public static final String TestRssUrl = "http://www.guokr.com/scientific/all/archive";
 
 }

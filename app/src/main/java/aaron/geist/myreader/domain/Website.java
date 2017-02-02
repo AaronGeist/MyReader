@@ -30,6 +30,8 @@ public class Website {
      */
     private String navigationUrl = "";
 
+    private String innerPostSelect = null;
+
     public long getId() {
         return id;
     }
@@ -68,5 +70,13 @@ public class Website {
 
     public void setNavigationUrl(String navigationUrl) {
         this.navigationUrl = navigationUrl;
+    }
+
+    public String getInnerPostSelect() {
+        return innerPostSelect;
+    }
+
+    public void setInnerPostSelect(String innerPostSelect) {
+        this.innerPostSelect = innerPostSelect;
     }
 }

@@ -14,7 +14,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "zreader.db";
     // add version to call onUpgrade
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 5;
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -28,7 +28,8 @@ public class DBHelper extends SQLiteOpenHelper {
                 + DBContants.WEBSITE_COLUMN_NAME + " VARCHAR, "
                 + DBContants.WEBSITE_COLUMN_HOMEPAGE + " VARCHAR, "
                 + DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG + " VARCHAR, "
-                + DBContants.WEBSITE_COLUMN_NAVIGATION_URL + " VARCHAR)");
+                + DBContants.WEBSITE_COLUMN_NAVIGATION_URL + " VARCHAR, "
+                + DBContants.WEBSITE_COLUMN_SELECT_INNER_POST + " VARCHAR)");
 
         db.execSQL("CREATE TABLE IF NOT EXISTS " + DBContants.POST_TABLE_NAME
                 + " (" + DBContants.COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -38,13 +39,14 @@ public class DBHelper extends SQLiteOpenHelper {
                 + DBContants.POST_COLUMN_URL + " VARCHAR, "
                 + DBContants.POST_COLUMN_WEBSITE_ID + " NUMBER, "
                 + DBContants.POST_COLUMN_STARED + " INT DEFAULT 0, "
-                + DBContants.POST_COLUMN_READ + " INT DEFAULT 0)");
+                + DBContants.POST_COLUMN_READ + " INT DEFAULT 0, "
+                + DBContants.POST_COLUMN_IN_ORDER + " INT DEFAULT 0)");
 
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
 //        db.execSQL("ALTER TABLE " + DBContants.WEBSITE_TABLE_NAME + " ADD COLUMN other STRING");
-        db.execSQL("ALTER TABLE " + DBContants.POST_TABLE_NAME + " ADD COLUMN " + DBContants.POST_COLUMN_READ + " INT default 0");
+        db.execSQL("ALTER TABLE " + DBContants.WEBSITE_TABLE_NAME + " ADD COLUMN " + DBContants.WEBSITE_COLUMN_SELECT_INNER_POST + " VARCHAR");
     }
 }
