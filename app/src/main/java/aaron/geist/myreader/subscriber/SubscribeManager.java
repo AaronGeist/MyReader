@@ -16,7 +16,7 @@ import aaron.geist.myreader.domain.Website;
 import aaron.geist.myreader.utils.FileUtil;
 
 /**
- * Created by yzhou7 on 2015/7/27.
+ * Created by Aaron on 2015/7/27.
  */
 public class SubscribeManager {
 

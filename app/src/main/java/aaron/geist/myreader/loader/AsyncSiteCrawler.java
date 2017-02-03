@@ -12,10 +12,13 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import aaron.geist.myreader.constant.LoaderConstants;
 import aaron.geist.myreader.database.DBManager;
@@ -195,7 +198,6 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     }
 
     private Post crawlSinglePost(String urlStr) {
-        Post post = null;
         Document document = null;
         URL url = null;
         try {
@@ -221,12 +223,34 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             entry = body.select(website.getInnerPostSelect()).first();
         }
 
+        Long timestampLong = System.currentTimeMillis();
+        try {
+            Element timestamp = body.select(website.getInnerTimestampSelect()).first();
+            if (timestamp != null) {
+                String text = timestamp.text();
+                Matcher m = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2})").matcher(text);
+                if (m.find()) {
+                    String t = m.group(1);
+                    System.out.println(t);
+                    timestampLong = new SimpleDateFormat("yyyy-MM-dd hh:mm").parse(t).getTime();
+                } else {
+                    m = Pattern.compile("(\\d{4}/\\d{2}/\\d{2})").matcher(text);
+                    if (m.find()) {
+                        String t = m.group(1);
+                        timestampLong = new SimpleDateFormat("yyyy/MM/dd").parse(t).getTime();
+                    }
+                }
+            }
+        } catch (Exception e) {
+        }
+
         int currentPostId = UrlParser.getPostId(urlStr);
-        post = new Post();
+        Post post = new Post();
         post.setUrl(urlStr);
         post.setTitle(titleStr);
         post.setContent(localizeImages(entry, website.getName(), currentPostId));
         post.setExternalId(currentPostId);
+        post.setTimestamp(timestampLong);
         post.setWebsiteId(website.getId());
 
         return post;

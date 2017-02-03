@@ -44,15 +44,14 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
         ctx = context;
         mgr = new DBManager(context);
         website = new Website();
-        website.setHomePage(siteConfig.getUrl());
+        website.setHomePage(siteConfig.getPostsPath());
     }
 
     public void parse() {
         Log.d(className, "start parse homepage");
-        Document document = null;
         URL url = null;
         try {
-            url = new URL(this.siteConfig.getUrl());
+            url = new URL(this.siteConfig.getRootUrl() + this.siteConfig.getPostsPath());
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -70,12 +69,12 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
     }
 
     private void parsePostEntryClassName() {
-        if (this.siteConfig.getPostSelect() == null) {
-            Elements posts = body.getElementsByClass(this.siteConfig.getPostSelect());
+        if (this.siteConfig.getOuterPostSelect() == null) {
+            Elements posts = body.getElementsByClass(this.siteConfig.getOuterPostSelect());
             Element post = posts.first();
             Elements links = post.getElementsByTag(TAG_LINK);
             Iterator<Element> iterator = links.iterator();
-            Element link = null;
+            Element link;
             String className = "";
             while (iterator.hasNext()) {
                 link = iterator.next();
@@ -85,15 +84,16 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
                 }
             }
 
-            if (className != "" && this.siteConfig.getPostSelect() != null) {
+            if (className != "" && this.siteConfig.getOuterPostSelect() != null) {
                 Log.d(this.className, "Find post Entry class name=" + className);
-                website.setPostEntryTag("." + this.siteConfig.getPostSelect() + " ." + className);
+                website.setPostEntryTag("." + this.siteConfig.getOuterPostSelect() + " ." + className);
             } else {
                 Log.d(this.className, "Failed to find post Entry class name");
             }
         } else {
-            website.setPostEntryTag(this.siteConfig.getPostSelect());
+            website.setPostEntryTag(this.siteConfig.getOuterPostSelect());
             website.setInnerPostSelect(this.siteConfig.getInnerPostSelect());
+            website.setInnerTimestampSelect(this.siteConfig.getInnerTimestampSelect());
         }
     }
 

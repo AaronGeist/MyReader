@@ -14,12 +14,14 @@ public class DBContants {
     public static final String WEBSITE_COLUMN_POST_ENTRY_TAG = "postEntryTag";
     public static final String WEBSITE_COLUMN_NAVIGATION_URL = "navigationUrl";
     public static final String WEBSITE_COLUMN_SELECT_INNER_POST = "innerPostSelect";
+    public static final String WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP = "innerTimestampSelect";
 
 
     public static final String POST_TABLE_NAME = "post";
     public static final String POST_COLUMN_TITLE = "title";
     public static final String POST_COLUMN_CONTENT = "content";
     public static final String POST_COLUMN_EXTERNAL_ID = "externalId";
+    public static final String POST_COLUMN_TIMESTAMP = "timestamp";
     public static final String POST_COLUMN_URL = "url";
     public static final String POST_COLUMN_WEBSITE_ID = "websiteId";
     public static final String POST_COLUMN_STARED = "stared";

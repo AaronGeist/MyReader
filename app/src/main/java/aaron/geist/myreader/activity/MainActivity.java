@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.IntegerRes;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -27,6 +28,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,11 +52,8 @@ public class MainActivity extends AppCompatActivity
     private BaseAdapter adapter = null;
     private DBManager dbManager = null;
     private List<Post> adapterList = new ArrayList<>();
-    private int currentDBPageNum = 1;
+    private Map<Long, Integer> currDbPageMap = new HashMap<>();
     private Map<Long, Integer> initPostIdMap = new HashMap<>();
-
-    private Long siteId = -1L;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,9 +114,7 @@ public class MainActivity extends AppCompatActivity
 
         List<Website> websites = dbManager.getAllWebsites();
         if (websites != null && websites.size() > 0) {
-            // TODO load all posts of all sites
-            siteId = websites.get(0).getId();
-            loadAllPostTitle(siteId);
+            loadAllPostTitle(websites);
         }
 
         // pull to refresh latest posts
@@ -127,13 +125,23 @@ public class MainActivity extends AppCompatActivity
                 getResources().getColor(R.color.lightBlue), getResources().getColor(R.color.lightYellow));
     }
 
-    public void loadAllPostTitle(long siteId) {
+    public void loadAllPostTitle(List<Website> websites) {
 
-        Integer initPostId = dbManager.getMaxPostIdByWebsite(siteId);
-        initPostIdMap.put(siteId, initPostId);
+        for (Website website : websites) {
 
-        adapterList = dbManager.getPosts(currentDBPageNum, initPostId);
-        Log.d("", "load post title number=" + adapterList.size());
+            Integer initPostId = dbManager.getMaxPostIdByWebsite(website.getId());
+            initPostIdMap.put(website.getId(), initPostId);
+
+            Integer currentPageNum = 1;
+            currDbPageMap.put(website.getId(), currentPageNum);
+
+            adapterList.addAll(dbManager.getPosts(currentPageNum, initPostId, website.getId()));
+            Log.d("", "load post title number=" + adapterList.size());
+        }
+
+        // sort with timestamp
+        Collections.sort(adapterList);
+        Collections.reverse(adapterList);
 
         adapter = new PostAdapter(this, adapterList);
         listView.setAdapter(adapter);
@@ -257,35 +265,40 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onRefresh() {
-        Website website = dbManager.getWebsiteById(siteId);
-        AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
-        crawler.response = this;
-        CrawlerRequest request = new CrawlerRequest();
-        request.setWebsite(website);
-        request.setReverse(false);
-        crawler.execute(request);
+        List<Website> websites = dbManager.getAllWebsites();
+        for (Website website : websites) {
+            AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
+            crawler.response = this;
+            CrawlerRequest request = new CrawlerRequest();
+            request.setWebsite(website);
+            request.setReverse(false);
+            crawler.execute(request);
+        }
     }
 
     @Override
     public void onLoad() {
-        // TODO load all sites
-        Integer initPostId = initPostIdMap.get(dbManager.getAllWebsites().get(0).getId());
+        List<Website> websites = dbManager.getAllWebsites();
 
-        // load local DB first
-        List<Post> posts = dbManager.getPosts(++currentDBPageNum, initPostId);
-        if (posts.size() > 0) {
-            Toast.makeText(this, "Load posts:" + posts.size(), Toast.LENGTH_SHORT).show();
-            this.onTaskCompleted(true, posts, true);
-            return;
+        for (Website website : websites) {
+            Integer initPostId = initPostIdMap.get(website.getId());
+            currDbPageMap.put(website.getId(), currDbPageMap.get(website.getId()) + 1);
+
+            // load local DB first
+            List<Post> posts = dbManager.getPosts(currDbPageMap.get((website.getId())), initPostId, website.getId());
+            if (posts.size() > 0) {
+                Toast.makeText(this, "Load posts:" + posts.size(), Toast.LENGTH_SHORT).show();
+                this.onTaskCompleted(true, posts, true);
+                return;
+            }
+
+            // if all loaded, then load from online
+            AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
+            crawler.response = this;
+            CrawlerRequest request = new CrawlerRequest();
+            request.setWebsite(website);
+            request.setReverse(true);
+            crawler.execute(request);
         }
-
-        // if all loaded, then load from online
-        Website website = dbManager.getWebsiteById(siteId);
-        AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
-        crawler.response = this;
-        CrawlerRequest request = new CrawlerRequest();
-        request.setWebsite(website);
-        request.setReverse(true);
-        crawler.execute(request);
     }
 }

@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Created by Aaron on 2015/7/27.
  */
-public class Post implements Serializable {
+public class Post implements Serializable, Comparable {
 
     private static final long serialVersionUID = 9150231278934934185L;
 
@@ -17,6 +17,7 @@ public class Post implements Serializable {
      */
     private int externalId;
     private String url;
+    private long timestamp;
     private long websiteId;
     private boolean stared;
     private boolean read;
@@ -62,6 +63,14 @@ public class Post implements Serializable {
         this.url = url;
     }
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public long getWebsiteId() {
         return websiteId;
     }
@@ -93,4 +102,18 @@ public class Post implements Serializable {
     public void setInOrder(boolean inOrder) {
         this.inOrder = inOrder;
     }
+
+    @Override
+    public int compareTo(Object another) {
+        Post post = (Post) another;
+
+        int res = Long.valueOf(this.getTimestamp()).compareTo(post.getTimestamp());
+        if (res == 0) {
+            res = Integer.valueOf(this.getExternalId()).compareTo(post.getExternalId());
+        }
+
+        return res;
+    }
+
+
 }

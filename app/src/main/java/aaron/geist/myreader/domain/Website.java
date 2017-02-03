@@ -2,7 +2,7 @@ package aaron.geist.myreader.domain;
 
 /**
  * This class defines the basic element for crawling a website.
- *
+ * <p>
  * Created by yzhou7 on 2015/8/6.
  */
 public class Website {
@@ -22,7 +22,7 @@ public class Website {
     /**
      * css tag of post entry.
      * e.g. <span class="read-more">
-     *     <a target="_blank" href="http://xxxx.com/12345/">Read all</a></span>
+     * <a target="_blank" href="http://xxxx.com/12345/">Read all</a></span>
      */
     private String postEntryTag = "";
     /**
@@ -31,6 +31,8 @@ public class Website {
     private String navigationUrl = "";
 
     private String innerPostSelect = null;
+
+    private String innerTimestampSelect = null;
 
     public long getId() {
         return id;
@@ -78,5 +80,13 @@ public class Website {
 
     public void setInnerPostSelect(String innerPostSelect) {
         this.innerPostSelect = innerPostSelect;
+    }
+
+    public String getInnerTimestampSelect() {
+        return innerTimestampSelect;
+    }
+
+    public void setInnerTimestampSelect(String innerTimestampSelect) {
+        this.innerTimestampSelect = innerTimestampSelect;
     }
 }

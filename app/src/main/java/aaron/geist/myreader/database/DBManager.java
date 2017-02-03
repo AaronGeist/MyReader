@@ -42,6 +42,7 @@ public class DBManager {
             cv.put(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG, website.getPostEntryTag());
             cv.put(DBContants.WEBSITE_COLUMN_NAVIGATION_URL, website.getNavigationUrl());
             cv.put(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST, website.getInnerPostSelect());
+            cv.put(DBContants.WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP, website.getInnerTimestampSelect());
 
             if (c.moveToNext()) {
                 siteId = c.getInt(c.getColumnIndex(DBContants.COLUMN_ID));
@@ -80,6 +81,7 @@ public class DBManager {
             website.setPostEntryTag(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG)));
             website.setNavigationUrl(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAVIGATION_URL)));
             website.setInnerPostSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST)));
+            website.setInnerTimestampSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP)));
             websites.add(website);
         }
         c.close();
@@ -97,6 +99,7 @@ public class DBManager {
             website.setPostEntryTag(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG)));
             website.setNavigationUrl(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAVIGATION_URL)));
             website.setInnerPostSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST)));
+            website.setInnerTimestampSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP)));
         }
         c.close();
         return website;
@@ -114,6 +117,7 @@ public class DBManager {
             cv.put(DBContants.POST_COLUMN_TITLE, post.getTitle());
             cv.put(DBContants.POST_COLUMN_CONTENT, post.getContent());
             cv.put(DBContants.POST_COLUMN_EXTERNAL_ID, post.getExternalId());
+            cv.put(DBContants.POST_COLUMN_TIMESTAMP, post.getTimestamp());
             cv.put(DBContants.POST_COLUMN_URL, post.getUrl());
             cv.put(DBContants.POST_COLUMN_WEBSITE_ID, post.getWebsiteId());
             cv.put(DBContants.POST_COLUMN_IN_ORDER, post.isInOrder());
@@ -146,13 +150,14 @@ public class DBManager {
     public List<Post> getAllPostsBySiteId(long siteId) {
         List<Post> posts = new ArrayList<Post>();
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
-                DBContants.POST_COLUMN_WEBSITE_ID + "=" + siteId, null, null, null, DBContants.POST_COLUMN_EXTERNAL_ID + " DESC");
+                DBContants.POST_COLUMN_WEBSITE_ID + "=" + siteId, null, null, null, DBContants.POST_COLUMN_TIMESTAMP + ", " + DBContants.POST_COLUMN_EXTERNAL_ID + " DESC");
         while (c.moveToNext()) {
             Post post = new Post();
             post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));
             post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
             post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
             post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
+            post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
             post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
@@ -164,10 +169,11 @@ public class DBManager {
         return posts;
     }
 
-    public List<Post> getPosts(int pageNum, int startPostExtId) {
+    public List<Post> getPosts(int pageNum, int startPostExtId, long websiteId) {
         List<Post> posts = new ArrayList<Post>();
-        Cursor c = db.query(DBContants.POST_TABLE_NAME, null, DBContants.POST_COLUMN_EXTERNAL_ID + "<=" + startPostExtId, null, null, null,
-                DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
+        Cursor c = db.query(DBContants.POST_TABLE_NAME, null, DBContants.POST_COLUMN_EXTERNAL_ID + "<=" + startPostExtId + " AND " +
+                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId, null, null, null,
+                DBContants.POST_COLUMN_TIMESTAMP + " DESC, " + DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
                 (pageNum - 1) * DBContants.pageSize + "," + DBContants.pageSize);
         while (c.moveToNext()) {
             Post post = new Post();
@@ -175,6 +181,7 @@ public class DBManager {
             post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
             post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
             post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
+            post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
             post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
@@ -196,6 +203,7 @@ public class DBManager {
             post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
             post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
             post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
+            post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
             post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
@@ -213,9 +221,6 @@ public class DBManager {
         while (c.moveToNext()) {
             post = new Post();
             post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
-            post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
-            post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
-            post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
         }
         c.close();
         return post;
