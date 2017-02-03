@@ -279,7 +279,6 @@ public class MainActivity extends AppCompatActivity
         // load local DB first
         List<Post> posts = dbManager.getPosts(++currentDbPageNum, startPostId, websiteIds);
         if (posts.size() > 0) {
-            Toast.makeText(this, "Load posts:" + posts.size(), Toast.LENGTH_SHORT).show();
             this.onTaskCompleted(true, posts, true);
             return;
         }

@@ -49,7 +49,7 @@ public class PostAdapter extends BaseAdapter {
 
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
-        ViewHolder viewHolder = null;
+        ViewHolder viewHolder;
         if (view == null) {
             view = inflater.inflate(R.layout.post_title_item, viewGroup, false);
             viewHolder = new ViewHolder();
@@ -64,7 +64,10 @@ public class PostAdapter extends BaseAdapter {
         Post post = posts.get(i);
         viewHolder.textViewTile.setText(post.getTitle());
         if (post.isRead()) {
-            viewHolder.textViewTile.setTextColor(view.getResources().getColor(R.color.fontRead));
+            viewHolder.textViewTile.setTextColor(context.getColor(R.color.fontRead));
+        } else {
+            viewHolder.textViewTile.setTextColor(context.getColor(R.color.font));
+
         }
 
         return view;
