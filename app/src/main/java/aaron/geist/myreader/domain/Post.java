@@ -103,6 +103,12 @@ public class Post implements Serializable, Comparable {
         this.inOrder = inOrder;
     }
 
+    /**
+     * Sort by timestamp, then external ID
+     *
+     * @param another post to be compared
+     * @return 1, -1 or 0
+     */
     @Override
     public int compareTo(Object another) {
         Post post = (Post) another;
@@ -112,7 +118,8 @@ public class Post implements Serializable, Comparable {
             res = Integer.valueOf(this.getExternalId()).compareTo(post.getExternalId());
         }
 
-        return res;
+        // in desc order, so add minus in the front
+        return -res;
     }
 
 

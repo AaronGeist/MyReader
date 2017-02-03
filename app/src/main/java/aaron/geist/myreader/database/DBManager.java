@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import aaron.geist.myreader.constant.DBContants;
@@ -169,10 +170,18 @@ public class DBManager {
         return posts;
     }
 
-    public List<Post> getPosts(int pageNum, int startPostExtId, long websiteId) {
+    public List<Post> getPosts(int pageNum, int startPostExtId, Collection<Long> websiteIds) {
         List<Post> posts = new ArrayList<Post>();
+
+        String inSelection = "(";
+        for (Long websiteId : websiteIds) {
+            inSelection += String.valueOf(websiteId) + ",";
+        }
+        inSelection = inSelection.substring(0, inSelection.length() - 1);
+        inSelection += ")";
+
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null, DBContants.POST_COLUMN_EXTERNAL_ID + "<=" + startPostExtId + " AND " +
-                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId, null, null, null,
+                        DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection, null, null, null,
                 DBContants.POST_COLUMN_TIMESTAMP + " DESC, " + DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
                 (pageNum - 1) * DBContants.pageSize + "," + DBContants.pageSize);
         while (c.moveToNext()) {
@@ -237,11 +246,19 @@ public class DBManager {
 //        return titleList;
 //    }
 
-    public int getMaxPostIdByWebsite(long websiteId) {
+    public int getMaxPostIdByWebsite(Collection<Long> websiteIds) {
         int result = -1;
+
+        String inSelection = "(";
+        for (Long websiteId : websiteIds) {
+            inSelection += String.valueOf(websiteId) + ",";
+        }
+        inSelection = inSelection.substring(0, inSelection.length() - 1);
+        inSelection += ")";
+
         Cursor c = db.query(DBContants.POST_TABLE_NAME,
                 new String[]{"MAX(" + DBContants.POST_COLUMN_EXTERNAL_ID + ")"},
-                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId + " AND "
+                DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection + " AND "
                         + DBContants.POST_COLUMN_IN_ORDER + "=1", null, null, null, null);
         try {
             c.moveToNext();

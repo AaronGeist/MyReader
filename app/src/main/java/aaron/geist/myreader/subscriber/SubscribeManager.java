@@ -8,11 +8,10 @@ import java.util.Collection;
 import java.util.List;
 
 import aaron.geist.myreader.constant.SiteConfig;
-import aaron.geist.myreader.constant.TestConstants;
 import aaron.geist.myreader.database.DBManager;
-import aaron.geist.myreader.loader.HomePageParser;
 import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
+import aaron.geist.myreader.loader.HomePageParser;
 import aaron.geist.myreader.utils.FileUtil;
 
 /**
@@ -34,8 +33,10 @@ public class SubscribeManager {
      * @param url
      */
     public void subscribe(String url) {
-        url = TestConstants.TestRssUrl;
         HomePageParser parser = new HomePageParser(SiteConfig.guokr, ctx);
+        parser.parse();
+
+        parser = new HomePageParser(SiteConfig.importnew, ctx);
         parser.parse();
     }
 

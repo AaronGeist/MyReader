@@ -35,7 +35,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     public static final String CLASS_ENTRY = "entry";
 
-    private static final int MAX_POST_NUM_TO_LOAD = 10;
+    private static final int MAX_POST_NUM_TO_LOAD = 5;
 
     private DBManager mgr;
     private Website website = null;
@@ -80,7 +80,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         int step = isReverse ? 1 : -1;
 
         long targetPostId = isReserve ? mgr.getMinPostIdByWebsite(website.getId())
-                : mgr.getMaxPostIdByWebsite(website.getId());
+                : mgr.getMaxPostIdByWebsite(Collections.singletonList(website.getId()));
 
         if (targetPostId > 0) {
             // find page num of targetPostId

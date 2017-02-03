@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.annotation.IntegerRes;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -18,7 +17,6 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,11 +26,9 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.database.DBManager;
@@ -52,8 +48,8 @@ public class MainActivity extends AppCompatActivity
     private BaseAdapter adapter = null;
     private DBManager dbManager = null;
     private List<Post> adapterList = new ArrayList<>();
-    private Map<Long, Integer> currDbPageMap = new HashMap<>();
-    private Map<Long, Integer> initPostIdMap = new HashMap<>();
+    private Integer startPostId = -1;
+    private Integer currentDbPageNum = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,21 +123,16 @@ public class MainActivity extends AppCompatActivity
 
     public void loadAllPostTitle(List<Website> websites) {
 
+        Collection<Long> websiteIds = new ArrayList<>();
         for (Website website : websites) {
-
-            Integer initPostId = dbManager.getMaxPostIdByWebsite(website.getId());
-            initPostIdMap.put(website.getId(), initPostId);
-
-            Integer currentPageNum = 1;
-            currDbPageMap.put(website.getId(), currentPageNum);
-
-            adapterList.addAll(dbManager.getPosts(currentPageNum, initPostId, website.getId()));
-            Log.d("", "load post title number=" + adapterList.size());
+            websiteIds.add(website.getId());
         }
+        startPostId = dbManager.getMaxPostIdByWebsite(websiteIds);
 
-        // sort with timestamp
+        adapterList.addAll(dbManager.getPosts(currentDbPageNum, startPostId, websiteIds));
+
+        // sort with timestamp, then externalId
         Collections.sort(adapterList);
-        Collections.reverse(adapterList);
 
         adapter = new PostAdapter(this, adapterList);
         listView.setAdapter(adapter);
@@ -280,18 +271,20 @@ public class MainActivity extends AppCompatActivity
     public void onLoad() {
         List<Website> websites = dbManager.getAllWebsites();
 
+        Collection<Long> websiteIds = new ArrayList<>();
         for (Website website : websites) {
-            Integer initPostId = initPostIdMap.get(website.getId());
-            currDbPageMap.put(website.getId(), currDbPageMap.get(website.getId()) + 1);
+            websiteIds.add(website.getId());
+        }
 
-            // load local DB first
-            List<Post> posts = dbManager.getPosts(currDbPageMap.get((website.getId())), initPostId, website.getId());
-            if (posts.size() > 0) {
-                Toast.makeText(this, "Load posts:" + posts.size(), Toast.LENGTH_SHORT).show();
-                this.onTaskCompleted(true, posts, true);
-                return;
-            }
+        // load local DB first
+        List<Post> posts = dbManager.getPosts(++currentDbPageNum, startPostId, websiteIds);
+        if (posts.size() > 0) {
+            Toast.makeText(this, "Load posts:" + posts.size(), Toast.LENGTH_SHORT).show();
+            this.onTaskCompleted(true, posts, true);
+            return;
+        }
 
+        for (Website website : websites) {
             // if all loaded, then load from online
             AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
             crawler.response = this;
