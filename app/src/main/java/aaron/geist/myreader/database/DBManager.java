@@ -1,7 +1,6 @@
 package aaron.geist.myreader.database;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
@@ -19,12 +18,31 @@ import aaron.geist.myreader.domain.Website;
  */
 public class DBManager {
 
+    private volatile static DBManager instance = null;
+
     private DBHelper helper;
     private SQLiteDatabase db;
 
-    public DBManager(Context context) {
-        helper = new DBHelper(context);
+    private DBManager() {
+        helper = new DBHelper();
         db = helper.getWritableDatabase();
+    }
+
+    /**
+     * Singleton mode.
+     *
+     * @return instance
+     */
+    public static DBManager getInstance() {
+        if (instance == null) {
+            synchronized (DBManager.class) {
+                if (instance == null) {
+                    instance = new DBManager();
+                }
+            }
+        }
+
+        return instance;
     }
 
     public long addWebsite(Website website) {
@@ -161,7 +179,7 @@ public class DBManager {
             post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
-            post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
+            post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
             post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
             posts.add(post);
@@ -193,7 +211,7 @@ public class DBManager {
             post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
-            post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
+            post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
             post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
             posts.add(post);
@@ -215,7 +233,7 @@ public class DBManager {
             post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
             post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
             post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
-            post.setStared(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
+            post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
             post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
         }

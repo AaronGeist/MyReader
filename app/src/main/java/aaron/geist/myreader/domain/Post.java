@@ -19,7 +19,7 @@ public class Post implements Serializable, Comparable {
     private String url;
     private long timestamp;
     private long websiteId;
-    private boolean stared;
+    private boolean mark;
     private boolean read;
     private boolean inOrder;
 
@@ -79,12 +79,12 @@ public class Post implements Serializable, Comparable {
         this.websiteId = websiteId;
     }
 
-    public boolean isStarted() {
-        return stared;
+    public boolean isMarked() {
+        return mark;
     }
 
-    public void setStared(boolean stared) {
-        this.stared = stared;
+    public void setMarked(boolean mark) {
+        this.mark = mark;
     }
 
     public boolean isRead() {

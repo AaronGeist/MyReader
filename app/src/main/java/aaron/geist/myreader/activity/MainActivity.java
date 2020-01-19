@@ -1,12 +1,14 @@
 package aaron.geist.myreader.activity;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -39,49 +41,56 @@ import aaron.geist.myreader.domain.Website;
 import aaron.geist.myreader.extend.PostAdapter;
 import aaron.geist.myreader.extend.RefreshLayout;
 import aaron.geist.myreader.loader.AsyncSiteCrawler;
-import aaron.geist.myreader.loader.AsyncSiteCrawlerResponse;
+import aaron.geist.myreader.loader.AsyncCallback;
+import aaron.geist.myreader.utils.ToastUtil;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, AsyncSiteCrawlerResponse, RefreshLayout.OnRefreshListener, RefreshLayout.OnLoadListener {
+        implements NavigationView.OnNavigationItemSelectedListener, AsyncCallback, RefreshLayout.OnRefreshListener, RefreshLayout.OnLoadListener {
 
-    private ListView listView = null;
+    // tag for log indicator
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    private static Context context;
+
+    // android components
+    private ListView postTitleListView = null;
     private RefreshLayout postRefresh = null;
-    private BaseAdapter adapter = null;
+    private BaseAdapter postAdapter = null;
+
+    // services
     private DBManager dbManager = null;
-    private List<Post> adapterList = new ArrayList<>();
+
+    // local variables
+    private List<Post> postList = new ArrayList<>();
     private Integer startPostId = -1;
     private Integer currentDbPageNum = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        context = getApplicationContext();
 
         grantPermissions();
 
-        showPosts();
+        initResources();
+
+        initServices();
+
+        loadAllPosts();
     }
 
+    public static Context getContext() {
+        return context;
+    }
+
+    /**
+     * Grant all essential permissions, including:
+     * <ul>
+     * <li>Read storage</li>
+     * <li>Write storage</li>
+     * </ul>
+     */
     private void grantPermissions() {
         int REQUEST_EXTERNAL_STORAGE = 1;
         String[] PERMISSIONS_STORAGE = {
@@ -98,74 +107,85 @@ public class MainActivity extends AppCompatActivity
                     REQUEST_EXTERNAL_STORAGE
             );
         }
+
+        ToastUtil.toastLong("权限检测通过");
     }
 
-    private void showPosts() {
-        listView = (ListView) findViewById(R.id.postTitleList);
+    /**
+     * Initialize all components in activity.
+     */
+    private void initResources() {
+        setContentView(R.layout.activity_main);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.setDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        // set list view style
+        postTitleListView = findViewById(R.id.postTitleList);
         Drawable Null = new ColorDrawable();
         Null.setAlpha(0);
-        listView.setDivider(Null);
+        postTitleListView.setDivider(Null);
         // bug: must setDivider first, otherwise divider will be invisible
-        listView.setDividerHeight(20);
-        dbManager = new DBManager(this);
-
-        List<Website> websites = dbManager.getAllWebsites();
-        if (websites != null && websites.size() > 0) {
-            loadAllPostTitle(websites);
-        }
+        postTitleListView.setDividerHeight(20);
 
         // pull to refresh latest posts
-        postRefresh = (RefreshLayout) findViewById(R.id.postRefresh);
+        postRefresh = findViewById(R.id.postRefresh);
         postRefresh.setOnRefreshListener(this);
         postRefresh.setOnLoadListener(this);
         postRefresh.setColorSchemeColors(getResources().getColor(R.color.lightRed),
                 getResources().getColor(R.color.lightBlue), getResources().getColor(R.color.lightYellow));
-    }
 
-    public void loadAllPostTitle(List<Website> websites) {
-
-        Collection<Long> websiteIds = new ArrayList<>();
-        for (Website website : websites) {
-            websiteIds.add(website.getId());
-        }
-        startPostId = dbManager.getMaxPostIdByWebsite(websiteIds);
-
-        adapterList.addAll(dbManager.getPosts(currentDbPageNum, startPostId, websiteIds));
-
-        // sort with timestamp, then externalId
-        Collections.sort(adapterList);
-
-        adapter = new PostAdapter(this, adapterList);
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        postAdapter = new PostAdapter(this, postList);
+        postTitleListView.setAdapter(postAdapter);
+        postTitleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
-                Post selectedPost = (Post) listView.getItemAtPosition(pos);
+                Post selectedPost = (Post) postTitleListView.getItemAtPosition(pos);
 
                 Intent intent = new Intent();
-                intent.putExtra(PostActivity.POST_ITEM, selectedPost);
+                intent.putExtra(PostActivity.POST_DATA, selectedPost);
                 intent.setClass(view.getContext(), PostActivity.class);
                 startActivity(intent);
 
                 // update post as read
                 if (!selectedPost.isRead()) {
                     selectedPost.setRead(true);
+                    postAdapter.notifyDataSetChanged();
+
                     dbManager.updatePostRead(selectedPost.getId(), true);
-                    adapter.notifyDataSetChanged();
                 }
             }
         });
-        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+
+        postTitleListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int pos, long l) {
                 new AlertDialog.Builder(view.getContext()).setTitle("DELETE CURRENT POST?")
                         .setPositiveButton("YES", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
-                                Post selectPost = (Post) listView.getItemAtPosition(pos);
+                                Post selectPost = (Post) postTitleListView.getItemAtPosition(pos);
+                                postList.remove(selectPost);
+                                postAdapter.notifyDataSetChanged();
+
                                 dbManager.removePost(selectPost);
-                                adapterList.remove(selectPost);
-                                adapter.notifyDataSetChanged();
                             }
                         })
                         .setNegativeButton("NO", new DialogInterface.OnClickListener() {
@@ -180,9 +200,43 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    /**
+     * Initialize all services in background.
+     */
+    private void initServices() {
+        // create database manager
+        dbManager = DBManager.getInstance();
+    }
+
+    /**
+     * Load all existing posts in DB
+     */
+    private void loadAllPosts() {
+        List<Website> websites = dbManager.getAllWebsites();
+
+        if (websites == null || websites.size() == 0) {
+            Log.i(TAG, "Not website stored yet.");
+            ToastUtil.toastLong("请先配置至少一个订阅网站");
+            return;
+        }
+
+        Collection<Long> websiteIds = new ArrayList<>();
+        for (Website website : websites) {
+            websiteIds.add(website.getId());
+        }
+        startPostId = dbManager.getMaxPostIdByWebsite(websiteIds);
+
+        postList.addAll(dbManager.getPosts(currentDbPageNum, startPostId, websiteIds));
+
+        // sort with timestamp, then externalId
+        Collections.sort(postList);
+
+        ToastUtil.toastShort("加载文章完毕，一共有 " + postList.size() + "篇文章");
+    }
+
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -236,7 +290,7 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -247,11 +301,11 @@ public class MainActivity extends AppCompatActivity
         postRefresh.setLoading(false);
         if (crawlSuccess) {
             if (isReverse) {
-                adapterList.addAll(posts);
+                postList.addAll(posts);
             } else {
-                adapterList.addAll(0, posts);
+                postList.addAll(0, posts);
             }
-            adapter.notifyDataSetChanged();
+            postAdapter.notifyDataSetChanged();
         }
     }
 
@@ -259,11 +313,12 @@ public class MainActivity extends AppCompatActivity
     public void onRefresh() {
         List<Website> websites = dbManager.getAllWebsites();
         for (Website website : websites) {
-            AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
-            crawler.response = this;
             CrawlerRequest request = new CrawlerRequest();
             request.setWebsite(website);
             request.setReverse(false);
+
+            AsyncSiteCrawler crawler = new AsyncSiteCrawler();
+            crawler.setCallback(this);
             crawler.execute(request);
         }
     }
@@ -286,12 +341,14 @@ public class MainActivity extends AppCompatActivity
 
         for (Website website : websites) {
             // if all loaded, then load from online
-            AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
-            crawler.response = this;
+            AsyncSiteCrawler crawler = new AsyncSiteCrawler();
+            crawler.setCallback(this);
             CrawlerRequest request = new CrawlerRequest();
             request.setWebsite(website);
             request.setReverse(true);
             crawler.execute(request);
         }
+
+        ToastUtil.toastLong("onLoad 加载完毕");
     }
 }

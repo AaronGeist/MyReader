@@ -1,9 +1,9 @@
 package aaron.geist.myreader.database;
 
-import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import aaron.geist.myreader.activity.MainActivity;
 import aaron.geist.myreader.constant.DBContants;
 
 /**
@@ -16,8 +16,8 @@ public class DBHelper extends SQLiteOpenHelper {
     // add version to call onUpgrade
     private static final int DATABASE_VERSION = 7;
 
-    public DBHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    public DBHelper() {
+        super(MainActivity.getContext(), DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override

@@ -22,12 +22,12 @@ import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
 import aaron.geist.myreader.extend.RefreshLayout;
 import aaron.geist.myreader.loader.AsyncSiteCrawler;
-import aaron.geist.myreader.loader.AsyncSiteCrawlerResponse;
+import aaron.geist.myreader.loader.AsyncCallback;
 
 /**
  * Created by Aaron on 2015/8/7.
  */
-public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerResponse, RefreshLayout.OnRefreshListener, RefreshLayout.OnLoadListener {
+public class PostTitleListActivity extends Activity implements AsyncCallback, RefreshLayout.OnRefreshListener, RefreshLayout.OnLoadListener {
 
     ListView listView = null;
     RefreshLayout postRefresh = null;
@@ -48,8 +48,8 @@ public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerR
         Intent intent = this.getIntent();
         siteId = intent.getLongExtra(DBContants.POST_COLUMN_EXTERNAL_ID, 0);
 
-        listView = (ListView) findViewById(R.id.postTitleList);
-        dbManager = new DBManager(this);
+        listView = findViewById(R.id.postTitleList);
+        dbManager = DBManager.getInstance();
 
         loadAllPostTitle(siteId);
 
@@ -111,8 +111,8 @@ public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerR
     @Override
     public void onRefresh() {
         Website website = dbManager.getWebsiteById(siteId);
-        AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
-        crawler.response = this;
+        AsyncSiteCrawler crawler = new AsyncSiteCrawler();
+        crawler.setCallback(this);
         CrawlerRequest request = new CrawlerRequest();
         request.setWebsite(website);
         request.setReverse(false);
@@ -122,8 +122,8 @@ public class PostTitleListActivity extends Activity implements AsyncSiteCrawlerR
     @Override
     public void onLoad() {
         Website website = dbManager.getWebsiteById(siteId);
-        AsyncSiteCrawler crawler = new AsyncSiteCrawler(getApplication().getApplicationContext());
-        crawler.response = this;
+        AsyncSiteCrawler crawler = new AsyncSiteCrawler();
+        crawler.setCallback(this);
         CrawlerRequest request = new CrawlerRequest();
         request.setWebsite(website);
         request.setReverse(true);

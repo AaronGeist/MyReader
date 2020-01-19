@@ -24,7 +24,7 @@ public class SubscribeManager {
 
     public SubscribeManager(Context ctx) {
         this.ctx = ctx;
-        this.mgr = new DBManager(ctx);
+        this.mgr = DBManager.getInstance();
     }
 
     /**
@@ -36,8 +36,8 @@ public class SubscribeManager {
         HomePageParser parser = new HomePageParser(SiteConfig.guokr, ctx);
         parser.parse();
 
-        parser = new HomePageParser(SiteConfig.importnew, ctx);
-        parser.parse();
+//        parser = new HomePageParser(SiteConfig.importnew, ctx);
+//        parser.parse();
     }
 
     // TODO add DB method to remove site more efficiently

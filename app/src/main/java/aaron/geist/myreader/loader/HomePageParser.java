@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 /**
  * Created by Aaron on 2015/8/6.
  */
-public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawlerResponse {
+public class HomePageParser implements AsyncPageLoaderResponse, AsyncCallback {
 
     public static final String TAG_LINK = "a";
     public static final String TAG_TITLE = "title";
@@ -42,7 +42,7 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
     public HomePageParser(SiteConfig siteConfig, Context context) {
         this.siteConfig = siteConfig;
         ctx = context;
-        mgr = new DBManager(context);
+        mgr = DBManager.getInstance();
         website = new Website();
         website.setHomePage(siteConfig.getPostsPath());
     }
@@ -148,8 +148,8 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncSiteCrawler
         }
 
         // async crawl website, get posts and store in DB.
-        AsyncSiteCrawler crawler = new AsyncSiteCrawler(ctx);
-        crawler.response = this;
+        AsyncSiteCrawler crawler = new AsyncSiteCrawler();
+        crawler.setCallback(this);
         CrawlerRequest request = new CrawlerRequest();
         request.setWebsite(website);
         request.setReverse(false);

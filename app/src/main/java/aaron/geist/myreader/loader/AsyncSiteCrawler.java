@@ -41,7 +41,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     private Website website = null;
     private Boolean crawlSuccess = false;
     private boolean isReverse = false;
-    public AsyncSiteCrawlerResponse response = null;
+    private AsyncCallback callback = null;
     private final List<Post> crawledPosts = new ArrayList<>();
 
     /**
@@ -53,8 +53,8 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
      */
     private volatile boolean stopCrawl = false;
 
-    public AsyncSiteCrawler(Context ctx) {
-        mgr = new DBManager(ctx);
+    public AsyncSiteCrawler() {
+        mgr = DBManager.getInstance();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     @Override
     protected void onPostExecute(Boolean crawlSuccess) {
-        response.onTaskCompleted(crawlSuccess, crawledPosts, isReverse);
+        callback.onTaskCompleted(crawlSuccess, crawledPosts, isReverse);
     }
 
     public void crawl(boolean isReserve) {
@@ -274,4 +274,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         return entry.html();
     }
 
+    public void setCallback(AsyncCallback callback) {
+        this.callback = callback;
+    }
 }

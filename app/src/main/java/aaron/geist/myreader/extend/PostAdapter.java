@@ -54,8 +54,8 @@ public class PostAdapter extends BaseAdapter {
             view = inflater.inflate(R.layout.post_title_item, viewGroup, false);
             viewHolder = new ViewHolder();
 
-            viewHolder.layout = (RelativeLayout) view.findViewById(R.id.content_main);
-            viewHolder.textViewTile = (TextView) view.findViewById(R.id.postTitle);
+            viewHolder.layout = view.findViewById(R.id.content_main);
+            viewHolder.textViewTile = view.findViewById(R.id.postTitle);
             view.setTag(viewHolder);
         } else {
             viewHolder = (ViewHolder) view.getTag();

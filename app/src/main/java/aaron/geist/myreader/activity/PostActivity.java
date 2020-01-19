@@ -2,7 +2,6 @@ package aaron.geist.myreader.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.ImageButton;
@@ -20,11 +19,12 @@ import aaron.geist.myreader.domain.Post;
  */
 public class PostActivity extends AppCompatActivity {
 
-    private DBManager dbManager = null;
-    private Post currentPost = null;
-    private ImageButton collectBtn = null;
+    private Post post = null;
+    private ImageButton markBtn = null;
+    private TextView title = null;
+    private WebView content = null;
 
-    public static final String POST_ITEM = "postItem";
+    public static final String POST_DATA = "post_data";
 
     /**
      * Called when the activity is first created.
@@ -35,7 +35,7 @@ public class PostActivity extends AppCompatActivity {
         setContentView(R.layout.post_main);
         Toolbar postToolbar = findViewById(R.id.postToolbar);
         setSupportActionBar(postToolbar);
-        postToolbar.setNavigationIcon(R.drawable.ic_menu_back);
+        postToolbar.setNavigationIcon(R.drawable.close);
 
         postToolbar.setNavigationOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
@@ -43,37 +43,34 @@ public class PostActivity extends AppCompatActivity {
             }
         });
 
-        collectBtn = findViewById(R.id.collectBtn);
+        markBtn = findViewById(R.id.markBtn);
+        title = findViewById(R.id.singlePostTitle);
+        content = findViewById(R.id.singlePostContent);
 
         Intent intent = this.getIntent();
-        currentPost = (Post) intent.getSerializableExtra(POST_ITEM);
-        dbManager = new DBManager(this);
-        showPost(currentPost);
+        post = (Post) intent.getSerializableExtra(POST_DATA);
+
+        showPost();
 
         setBtnListener();
     }
 
-    private void showPost(Post post) {
-        Log.d("", "Loading post id=" + post.getId());
+    private void showPost() {
+        title.setText(post.getTitle());
+        content.loadDataWithBaseURL(this.post.getUrl(), post.getContent(), "text/html", "utf-8", null);
 
-        currentPost = dbManager.getSinglePost(currentPost.getId());
-        final TextView title = findViewById(R.id.singlePostTitle);
-        title.setText(currentPost.getTitle());
-        final WebView content = findViewById(R.id.singlePostContent);
-        content.loadDataWithBaseURL(currentPost.getUrl(), currentPost.getContent(), "text/html", "utf-8", null);
-
-        if (currentPost.isStarted()) {
-            collectBtn.setBackground(getDrawable(R.drawable.star));
+        if (post.isMarked()) {
+            markBtn.setBackground(getDrawable(R.drawable.mark_yes));
         }
     }
 
     private void setBtnListener() {
-        collectBtn.setOnClickListener(new View.OnClickListener() {
+        markBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                currentPost.setStared(!currentPost.isStarted());
-                dbManager.updatePostStar(currentPost.getId(), currentPost.isStarted());
-                collectBtn.setBackground(currentPost.isStarted() ? getDrawable(R.drawable.star) : getDrawable(R.drawable.unstar));
+                post.setMarked(!post.isMarked());
+                DBManager.getInstance().updatePostStar(post.getId(), post.isMarked());
+                markBtn.setBackground(post.isMarked() ? getDrawable(R.drawable.mark_yes) : getDrawable(R.drawable.mark_no));
             }
         });
     }
