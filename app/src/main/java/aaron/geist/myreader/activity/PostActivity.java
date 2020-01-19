@@ -2,13 +2,14 @@ package aaron.geist.myreader.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.ImageButton;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.database.DBManager;
@@ -32,7 +33,7 @@ public class PostActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.post_main);
-        Toolbar postToolbar = (Toolbar) findViewById(R.id.postToolbar);
+        Toolbar postToolbar = findViewById(R.id.postToolbar);
         setSupportActionBar(postToolbar);
         postToolbar.setNavigationIcon(R.drawable.ic_menu_back);
 
@@ -42,7 +43,7 @@ public class PostActivity extends AppCompatActivity {
             }
         });
 
-        collectBtn = (ImageButton) findViewById(R.id.collectBtn);
+        collectBtn = findViewById(R.id.collectBtn);
 
         Intent intent = this.getIntent();
         currentPost = (Post) intent.getSerializableExtra(POST_ITEM);
@@ -56,9 +57,9 @@ public class PostActivity extends AppCompatActivity {
         Log.d("", "Loading post id=" + post.getId());
 
         currentPost = dbManager.getSinglePost(currentPost.getId());
-        final TextView title = (TextView) findViewById(R.id.singlePostTitle);
+        final TextView title = findViewById(R.id.singlePostTitle);
         title.setText(currentPost.getTitle());
-        final WebView content = (WebView) findViewById(R.id.singlePostContent);
+        final WebView content = findViewById(R.id.singlePostContent);
         content.loadDataWithBaseURL(currentPost.getUrl(), currentPost.getContent(), "text/html", "utf-8", null);
 
         if (currentPost.isStarted()) {

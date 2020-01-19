@@ -1,11 +1,8 @@
 package aaron.geist.myreader.utils;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
@@ -14,8 +11,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import aaron.geist.myreader.activity.MainActivity;
 
 /**
  * Created by maojun on 2017/1/1.
