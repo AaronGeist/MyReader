@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import aaron.geist.myreader.constant.HtmlConstants;
 import aaron.geist.myreader.constant.LoaderConstants;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
@@ -106,11 +107,11 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             return;
         }
 
-        Log.d("", "crawling page " + website.getNavigationUrl() + pageNum);
+        Log.d("", "crawling page " + String.format(website.getNavigationUrl(), pageNum));
         Document document = null;
         URL url = null;
         try {
-            url = new URL(website.getNavigationUrl() + pageNum);
+            url = new URL(String.format(website.getNavigationUrl(), pageNum));
         } catch (MalformedURLException e) {
             Log.d("", "MalformedURLException: " + e.getMessage());
         }
@@ -143,7 +144,11 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         String postUrl;
         for (int i = 0, size = postList.size(); i < size && !stopCrawl; i++) {
             post = postList.get(i);
-            postUrl = post.attr(HomePageParser.ATTR_HREF);
+
+            postUrl = post.attr(HtmlConstants.ATTR_HREF);
+            if (!postUrl.startsWith("http")) {
+                postUrl = website.getHomePage() + postUrl;
+            }
 
             // post already exists
             if (mgr.getPostByExternalId(UrlParser.getPostId(postUrl)) != null) {
@@ -169,11 +174,11 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     }
 
     private int findLastPostInCurrentPage(int pageNum) {
-        Log.d("", "crawling page " + website.getNavigationUrl() + pageNum);
+        Log.d("", "crawling page " + String.format(website.getNavigationUrl(), pageNum));
         Document document = null;
         URL url = null;
         try {
-            url = new URL(website.getNavigationUrl() + pageNum);
+            url = new URL(String.format(website.getNavigationUrl(), pageNum));
         } catch (MalformedURLException e) {
             Log.d("", "MalformedURLException: " + e.getMessage());
         }
@@ -184,7 +189,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             Log.d("", "IOException: " + e.getMessage());
         }
 
-        Log.d("", "finish loading page " + website.getNavigationUrl() + pageNum);
+        Log.d("", "finish loading page " + String.format(website.getNavigationUrl(), pageNum));
         Element body = document.body();
         Log.d("", "post entry tag=" + website.getPostEntryTag());
         Elements posts = body.select(website.getPostEntryTag());
@@ -192,13 +197,15 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         Log.d("", "find post number=" + posts.size());
 
         Element lastPost = posts.last();
-        return UrlParser.getPostId(lastPost.attr(HomePageParser.ATTR_HREF));
+        return UrlParser.getPostId(lastPost.attr(HtmlConstants.ATTR_HREF));
     }
 
     private Post crawlSinglePost(String urlStr) {
+        Log.d("", "start crawl post: " + urlStr);
         Document document = null;
         URL url = null;
         try {
+            urlStr = urlStr.replaceAll("\\/\\/", "\\/");
             url = new URL(urlStr);
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -212,9 +219,9 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
         Element body = document.body();
 
-        // parse title, same as HomePageParser
+        // parse title
         Element head = document.head();
-        Element titleElem = head.getElementsByTag(HomePageParser.TAG_TITLE).first();
+        Element titleElem = head.getElementsByTag(HtmlConstants.TAG_TITLE).first();
         String title = titleElem.ownText();
 
         // if we find | in title, only the first part is important
@@ -243,8 +250,6 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     }
 
     private String localizeImages(Elements contents, String site, int postId) {
-        Log.d("", "localizeImages");
-
         StringBuilder sb = new StringBuilder();
         for (Element content : contents) {
             // find images first

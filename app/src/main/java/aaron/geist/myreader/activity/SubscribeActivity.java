@@ -20,8 +20,6 @@ import aaron.geist.myreader.subscriber.SubscribeManager;
  */
 public class SubscribeActivity extends Activity {
 
-    private SubscribeManager subscribeManager = new SubscribeManager();
-
     /**
      * Called when the activity is first created.
      */
@@ -35,15 +33,15 @@ public class SubscribeActivity extends Activity {
         RecyclerView.Adapter subItemAdapter = new SubscribeItemAdapter(getApplicationContext(), Arrays.asList(SiteConfig.values()));
         subscriptionList.setAdapter(subItemAdapter);
 
-        setBtnListener();
+        initButton();
     }
 
-    public void setBtnListener() {
+    public void initButton() {
         Button btn = findViewById(R.id.clearSubBtn);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                subscribeManager.unSubscribeAll();
+                SubscribeManager.getInstance().unSubscribeAll();
             }
         });
     }

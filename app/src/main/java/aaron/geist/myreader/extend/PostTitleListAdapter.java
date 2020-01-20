@@ -15,6 +15,7 @@ import java.util.List;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.domain.Post;
+import aaron.geist.myreader.subscriber.SubscribeManager;
 
 /**
  * Created by Aaron on 2017/1/9.
@@ -72,7 +73,7 @@ public class PostTitleListAdapter extends BaseAdapter {
 
         @SuppressLint("SimpleDateFormat")
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        viewHolder.meta.setText(sdf.format(date));
+        viewHolder.meta.setText(sdf.format(date) + " " + SubscribeManager.getInstance().queryNameById(post.getWebsiteId()));
 
         if (post.isRead()) {
             viewHolder.textViewTile.setTextColor(context.getColor(R.color.fontRead));

@@ -10,10 +10,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.constant.SiteConfig;
+import aaron.geist.myreader.database.DBManager;
+import aaron.geist.myreader.domain.Website;
 import aaron.geist.myreader.subscriber.SubscribeManager;
 import aaron.geist.myreader.utils.ToastUtil;
 
@@ -23,12 +27,17 @@ public class SubscribeItemAdapter extends RecyclerView.Adapter<SubscribeItemAdap
     private Context mContext;
 
     private SubscribeManager subscribeManager;
+    private Map<String, Website> websiteMap = new HashMap<>();
 
     public SubscribeItemAdapter(Context context, List<SiteConfig> items) {
         super();
         mItems = items;
         mContext = context;
-        subscribeManager = new SubscribeManager();
+        subscribeManager = SubscribeManager.getInstance();
+        List<Website> websites = DBManager.getInstance().getAllWebsites();
+        for (Website website : websites) {
+            websiteMap.put(website.getName(), website);
+        }
     }
 
     @Override
@@ -41,13 +50,28 @@ public class SubscribeItemAdapter extends RecyclerView.Adapter<SubscribeItemAdap
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         final SiteConfig siteConfig = mItems.get(position);
         holder.tv.setText(siteConfig.getName());
-        holder.btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ToastUtil.toastLong(siteConfig.getName());
-                subscribeManager.subscribe(siteConfig);
-            }
-        });
+
+        if (websiteMap.containsKey(siteConfig.getName())) {
+            // already subscribed
+            holder.btn.setText(R.string.website_unsub);
+            holder.btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ToastUtil.toastLong(siteConfig.getName());
+                    subscribeManager.unsubscribe(siteConfig);
+                    ((Button) v).setText(R.string.website_sub);
+                }
+            });
+        } else {
+            holder.btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ToastUtil.toastLong(siteConfig.getName());
+                    subscribeManager.subscribe(siteConfig);
+                    ((Button) v).setText(R.string.website_unsub);
+                }
+            });
+        }
 
         holder.tv.setOnClickListener(new View.OnClickListener() {
             @Override
