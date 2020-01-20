@@ -4,6 +4,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import org.jsoup.Jsoup;
+import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -11,19 +12,17 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import aaron.geist.myreader.constant.LoaderConstants;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
 import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
+import aaron.geist.myreader.utils.DateUtil;
 import aaron.geist.myreader.utils.FileDownloader;
 import aaron.geist.myreader.utils.UrlParser;
 
@@ -31,8 +30,6 @@ import aaron.geist.myreader.utils.UrlParser;
  * Created by Aaron on 2015/8/6.
  */
 public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean> {
-
-    public static final String CLASS_ENTRY = "entry";
 
     private static final int MAX_POST_NUM_TO_LOAD = 5;
 
@@ -42,6 +39,8 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     private boolean isReverse = false;
     private AsyncCallback callback = null;
     private final List<Post> crawledPosts = new ArrayList<>();
+
+    private final List<String> imageSrcAttr = Arrays.asList("src", "data-original");
 
     /**
      * signal to stop crawling when:
@@ -215,62 +214,57 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
         // parse title, same as HomePageParser
         Element head = document.head();
-        Element title = head.getElementsByTag(HomePageParser.TAG_TITLE).first();
-        String titleStr = title.ownText();
-        Element entry = body.select(CLASS_ENTRY).first();
-        if (entry == null) {
-            entry = body.select(website.getInnerPostSelect()).first();
+        Element titleElem = head.getElementsByTag(HomePageParser.TAG_TITLE).first();
+        String title = titleElem.ownText();
+
+        // if we find | in title, only the first part is important
+        if (title.contains("|")) {
+            title = title.split("\\|")[0];
         }
 
-        Long timestampLong = System.currentTimeMillis();
-        try {
-            Element timestamp = body.select(website.getInnerTimestampSelect()).first();
-            if (timestamp != null) {
-                String text = timestamp.text();
-                Matcher m = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2})").matcher(text);
-                if (m.find()) {
-                    String t = m.group(1);
-                    System.out.println(t);
-                    timestampLong = new SimpleDateFormat("yyyy-MM-dd hh:mm").parse(t).getTime();
-                } else {
-                    m = Pattern.compile("(\\d{4}/\\d{2}/\\d{2})").matcher(text);
-                    if (m.find()) {
-                        String t = m.group(1);
-                        timestampLong = new SimpleDateFormat("yyyy/MM/dd").parse(t).getTime();
-                    }
-                }
-            }
-        } catch (Exception e) {
+        Elements contents = body.select(website.getInnerPostSelect());
+
+        long ts = System.currentTimeMillis();
+        Element tsElem = body.select(website.getInnerTimestampSelect()).first();
+        if (tsElem != null) {
+            ts = DateUtil.find(tsElem.text());
         }
 
         int currentPostId = UrlParser.getPostId(urlStr);
         Post post = new Post();
         post.setUrl(urlStr);
-        post.setTitle(titleStr);
-        post.setContent(localizeImages(entry, website.getName(), currentPostId));
+        post.setTitle(title);
+        post.setContent(localizeImages(contents, website.getName(), currentPostId));
         post.setExternalId(currentPostId);
-        post.setTimestamp(timestampLong);
+        post.setTimestamp(ts);
         post.setWebsiteId(website.getId());
 
         return post;
     }
 
-    private String localizeImages(Element entry, String site, int postId) {
+    private String localizeImages(Elements contents, String site, int postId) {
         Log.d("", "localizeImages");
 
-        // find images first
-        Elements images = entry.getElementsByTag("img");
-        Iterator<Element> it = images.listIterator();
-        while (it.hasNext()) {
-            Element img = it.next();
-            Log.d("", img.html());
-            String src = img.attr("src");
+        StringBuilder sb = new StringBuilder();
+        for (Element content : contents) {
+            // find images first
+            Elements images = content.getElementsByTag("img");
+            for (Element img : images) {
+                // image link might have several attributes, try one by one
+                for (String attr : imageSrcAttr) {
+                    String src = img.attr(attr);
+                    if (StringUtil.isBlank(src)) {
+                        continue;
+                    }
 
-            String filePath = FileDownloader.download(src, "/myReader/images/" + site + "/" + postId + "/");
-            img.attr("src", filePath);
+                    String filePath = FileDownloader.download(src, "/myReader/images/" + site + "/" + postId + "/");
+                    img.attr(attr, filePath);
+                }
+            }
+            sb.append(content.html()).append("\n");
         }
 
-        return entry.html();
+        return sb.toString();
     }
 
     public void setCallback(AsyncCallback callback) {

@@ -15,10 +15,9 @@ public class UrlParser {
         Pattern p = Pattern.compile("^.*/[^0-9]*(\\d+)[/.a-zA-Z]*");
         Matcher m = p.matcher(url);
 
-        Log.d("", "getPostId url=" + url);
-        if (m != null && m.matches()) {
+        if (m.matches()) {
             result = Integer.valueOf(m.group(1));
-            Log.d("", "get post id=" + result);
+            Log.d("", "parse post ID: " + result);
         }
 
         return result;

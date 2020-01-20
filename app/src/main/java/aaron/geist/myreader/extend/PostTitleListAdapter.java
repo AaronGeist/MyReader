@@ -20,14 +20,14 @@ import aaron.geist.myreader.domain.Post;
  * Created by Aaron on 2017/1/9.
  */
 
-public class PostAdapter extends BaseAdapter {
+public class PostTitleListAdapter extends BaseAdapter {
 
     private Context context = null;
     private List<Post> posts = null;
     private LayoutInflater inflater;
 
 
-    public PostAdapter(Context context, List<Post> posts) {
+    public PostTitleListAdapter(Context context, List<Post> posts) {
         this.context = context;
         if (posts != null) {
             this.posts = posts;
@@ -71,7 +71,7 @@ public class PostAdapter extends BaseAdapter {
         Date date = new Date(post.getTimestamp());
 
         @SuppressLint("SimpleDateFormat")
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         viewHolder.meta.setText(sdf.format(date));
 
         if (post.isRead()) {

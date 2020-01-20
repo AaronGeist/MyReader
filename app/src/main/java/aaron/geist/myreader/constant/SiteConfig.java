@@ -6,12 +6,14 @@ package aaron.geist.myreader.constant;
 
 public enum SiteConfig {
 
-    guokr("https://www.guokr.com/", "scientific/all/archive", "div.article-item > h3 > a", "div.rich_media_content", "gpages", "div.content-th-info > span"),
-    importnew("http://www.importnew.com/", "all-posts", "div.post > div.post-meta > p > a.meta-title", "div.entry", "navigation", "p.entry-meta-hide-on-mobile"),
-    jobbole("http://blog.jobbole.com/", "all-posts", "div.post > div.post-meta > p > a.meta-title", "div.entry", "navigation", "p.entry-meta-hide-on-mobile"),
-    infoq("http://www.infoq.com/", "cn/articles", "#content div.news_type2 > h2 > a", "div.text_info_article", "", ""), //
+    guokr("果壳", " https://www.guokr.com/", "scientific/all/archive", "div.article-item > h3 > a", "div.rich_media_content", "gpages", "#commentAchor + p"),
+    jiandan("煎蛋", "http://jandan.net/", "", "#content div.post h2 > a", "div.post", "page/", "div.post div.time_s"),
+//    importnew("importNew", "http://www.importnew.com/", "all-posts", "div.post > div.post-meta > p > a.meta-title", "div.entry", "navigation", "p.entry-meta-hide-on-mobile"),
+    jobbole("伯乐", "http://blog.jobbole.com/", "all-posts", "div.post > div.post-meta > p > a.meta-title", "div.entry", "navigation", "p.entry-meta-hide-on-mobile"),
+    infoq("infoQ", "http://www.infoq.com/", "cn/articles", "#content div.news_type2 > h2 > a", "div.text_info_article", "", ""), //
     ; //
 
+    private String name;
     private String rootUrl;
     private String postsPath;
     private String outerPostSelect;
@@ -19,13 +21,18 @@ public enum SiteConfig {
     private String innerPostSelect;
     private String innerTimestampSelect;
 
-    SiteConfig(String rootUrl, String postsPath, String outerPostSelect, String innerPostSelect, String navigationClassName, String innerTimestampSelect) {
+    SiteConfig(String name, String rootUrl, String postsPath, String outerPostSelect, String innerPostSelect, String navigationClassName, String innerTimestampSelect) {
+        this.name = name;
         this.rootUrl = rootUrl;
         this.postsPath = postsPath;
         this.outerPostSelect = outerPostSelect;
         this.innerPostSelect = innerPostSelect;
         this.navigationClassName = navigationClassName;
         this.innerTimestampSelect = innerTimestampSelect;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getRootUrl() {

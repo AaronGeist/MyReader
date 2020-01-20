@@ -1,28 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="aaron.geist.myreader.activity.SubscribeActivity">
 
-    <ListView
-        android:id="@+id/siteList"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"></ListView>
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay">
 
-    <EditText
-        android:id="@+id/newSiteInput"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="http://www.importnew.com/all-posts"/>
-    <Button
-        android:id="@+id/addSiteBtn"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="New site"/>
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/postToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?attr/colorPrimary"
+            android:title=""
+            app:popupTheme="@style/AppTheme.PopupOverlay">
 
-    <Button
-        android:id="@+id/removeAllSitesBtn"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Subscribe Now" />
+
+        </androidx.appcompat.widget.Toolbar>
+
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Remove all sites"/>
-</LinearLayout>
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+
+        <Button
+            android:id="@+id/clearSubBtn"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Clear" />
+
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/subscribe_list"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+
+    </LinearLayout>
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

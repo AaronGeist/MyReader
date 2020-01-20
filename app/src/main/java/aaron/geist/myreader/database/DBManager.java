@@ -188,7 +188,7 @@ public class DBManager {
     }
 
     public List<Post> getPosts(int pageNum, int startPostExtId, Collection<Long> websiteIds) {
-        List<Post> posts = new ArrayList<Post>();
+        List<Post> posts = new ArrayList<>();
 
         StringBuilder sb = new StringBuilder();
         sb.append("(");
@@ -272,7 +272,7 @@ public class DBManager {
 
         String inSelection = "(";
         for (Long websiteId : websiteIds) {
-            inSelection += String.valueOf(websiteId) + ",";
+            inSelection += websiteId + ",";
         }
         inSelection = inSelection.substring(0, inSelection.length() - 1);
         inSelection += ")";

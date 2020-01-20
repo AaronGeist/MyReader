@@ -1,6 +1,5 @@
 package aaron.geist.myreader.subscriber;
 
-import android.content.Context;
 import android.os.Environment;
 
 import java.io.File;
@@ -19,25 +18,20 @@ import aaron.geist.myreader.utils.FileUtil;
  */
 public class SubscribeManager {
 
-    private final Context ctx;
     private final DBManager mgr;
 
-    public SubscribeManager(Context ctx) {
-        this.ctx = ctx;
+    public SubscribeManager() {
         this.mgr = DBManager.getInstance();
     }
 
     /**
      * Parse home page and add site to DB asynchronously.
      *
-     * @param url
+     * @param siteConfig
      */
-    public void subscribe(String url) {
-        HomePageParser parser = new HomePageParser(SiteConfig.guokr, ctx);
+    public void subscribe(SiteConfig siteConfig) {
+        HomePageParser parser = new HomePageParser(siteConfig);
         parser.parse();
-
-//        parser = new HomePageParser(SiteConfig.importnew, ctx);
-//        parser.parse();
     }
 
     // TODO add DB method to remove site more efficiently
@@ -67,7 +61,7 @@ public class SubscribeManager {
         return mgr.getAllWebsites();
     }
 
-    public void destory() {
+    public void destroy() {
         mgr.closeDB();
     }
 }

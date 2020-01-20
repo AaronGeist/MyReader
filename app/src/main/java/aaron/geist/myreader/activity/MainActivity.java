@@ -38,10 +38,10 @@ import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
 import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
-import aaron.geist.myreader.extend.PostAdapter;
+import aaron.geist.myreader.extend.PostTitleListAdapter;
 import aaron.geist.myreader.extend.RefreshLayout;
-import aaron.geist.myreader.loader.AsyncSiteCrawler;
 import aaron.geist.myreader.loader.AsyncCallback;
+import aaron.geist.myreader.loader.AsyncSiteCrawler;
 import aaron.geist.myreader.utils.ToastUtil;
 
 public class MainActivity extends AppCompatActivity
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity
     // android components
     private ListView postTitleListView = null;
     private RefreshLayout postRefresh = null;
-    private BaseAdapter postAdapter = null;
+    private BaseAdapter postTitleListAdapter = null;
 
     // services
     private DBManager dbManager = null;
@@ -152,8 +152,8 @@ public class MainActivity extends AppCompatActivity
         postRefresh.setColorSchemeColors(getResources().getColor(R.color.lightRed),
                 getResources().getColor(R.color.lightBlue), getResources().getColor(R.color.lightYellow));
 
-        postAdapter = new PostAdapter(this, postList);
-        postTitleListView.setAdapter(postAdapter);
+        postTitleListAdapter = new PostTitleListAdapter(this, postList);
+        postTitleListView.setAdapter(postTitleListAdapter);
         postTitleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity
                 // update post as read
                 if (!selectedPost.isRead()) {
                     selectedPost.setRead(true);
-                    postAdapter.notifyDataSetChanged();
+                    postTitleListAdapter.notifyDataSetChanged();
 
                     dbManager.updatePostRead(selectedPost.getId(), true);
                 }
@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 Post selectPost = (Post) postTitleListView.getItemAtPosition(pos);
                                 postList.remove(selectPost);
-                                postAdapter.notifyDataSetChanged();
+                                postTitleListAdapter.notifyDataSetChanged();
 
                                 dbManager.removePost(selectPost);
                             }
@@ -270,22 +270,12 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        } else if (id == R.id.nav_subscribe) {
+        if (id == R.id.nav_subscribe) {
             Intent intent = new Intent();
             intent.setClass(this.getApplicationContext(), SubscribeActivity.class);
             startActivity(intent);
+        } else if (id == R.id.nav_share) {
+        } else if (id == R.id.nav_send) {
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -305,7 +295,7 @@ public class MainActivity extends AppCompatActivity
             } else {
                 postList.addAll(0, posts);
             }
-            postAdapter.notifyDataSetChanged();
+            postTitleListAdapter.notifyDataSetChanged();
         } else {
             ToastUtil.toastLong("加载失败");
         }

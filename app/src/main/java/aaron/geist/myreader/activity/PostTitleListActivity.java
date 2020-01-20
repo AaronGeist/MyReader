@@ -54,7 +54,7 @@ public class PostTitleListActivity extends Activity implements AsyncCallback, Re
         loadAllPostTitle(siteId);
 
         // pull to refresh latest posts
-        postRefresh = (RefreshLayout) findViewById(R.id.postRefresh);
+        postRefresh = findViewById(R.id.postRefresh);
         postRefresh.setOnRefreshListener(this);
         postRefresh.setOnLoadListener(this);
         postRefresh.setColorSchemeColors(R.color.colorAccent, R.color.colorPrimary, R.color.colorPrimaryDark);

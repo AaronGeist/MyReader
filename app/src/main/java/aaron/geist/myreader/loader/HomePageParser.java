@@ -1,13 +1,6 @@
 package aaron.geist.myreader.loader;
 
-import android.content.Context;
 import android.util.Log;
-
-import aaron.geist.myreader.constant.SiteConfig;
-import aaron.geist.myreader.database.DBManager;
-import aaron.geist.myreader.domain.CrawlerRequest;
-import aaron.geist.myreader.domain.Post;
-import aaron.geist.myreader.domain.Website;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,6 +12,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import aaron.geist.myreader.constant.SiteConfig;
+import aaron.geist.myreader.database.DBManager;
+import aaron.geist.myreader.domain.CrawlerRequest;
+import aaron.geist.myreader.domain.Post;
+import aaron.geist.myreader.domain.Website;
 
 /**
  * Created by Aaron on 2015/8/6.
@@ -36,12 +35,10 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncCallback {
     private Element body = null;
     private Website website = null;
     private DBManager mgr;
-    private Context ctx = null;
     private SiteConfig siteConfig = null;
 
-    public HomePageParser(SiteConfig siteConfig, Context context) {
+    public HomePageParser(SiteConfig siteConfig) {
         this.siteConfig = siteConfig;
-        ctx = context;
         mgr = DBManager.getInstance();
         website = new Website();
         website.setHomePage(siteConfig.getPostsPath());
@@ -101,6 +98,11 @@ public class HomePageParser implements AsyncPageLoaderResponse, AsyncCallback {
      * parse navigation url pattern with specified tag name and class.
      */
     private void parseNavigationUrl() {
+        if (this.siteConfig.getNavigationClassName().contains("/")) {
+            website.setNavigationUrl(this.siteConfig.getRootUrl() + this.siteConfig.getNavigationClassName());
+            return;
+        }
+
         Elements navis = body.getElementsByClass(this.siteConfig.getNavigationClassName());
         if (navis != null) {
             Element navi = navis.first();
