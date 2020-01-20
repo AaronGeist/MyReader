@@ -230,8 +230,6 @@ public class MainActivity extends AppCompatActivity
 
         // sort with timestamp, then externalId
         Collections.sort(postList);
-
-        ToastUtil.toastShort("加载文章完毕，一共有 " + postList.size() + "篇文章");
     }
 
     @Override
@@ -300,12 +298,16 @@ public class MainActivity extends AppCompatActivity
         postRefresh.setRefreshing(false);
         postRefresh.setLoading(false);
         if (crawlSuccess) {
+            ToastUtil.toastLong("加载完毕，新增 " + posts.size() + "条");
+
             if (isReverse) {
                 postList.addAll(posts);
             } else {
                 postList.addAll(0, posts);
             }
             postAdapter.notifyDataSetChanged();
+        } else {
+            ToastUtil.toastLong("加载失败");
         }
     }
 

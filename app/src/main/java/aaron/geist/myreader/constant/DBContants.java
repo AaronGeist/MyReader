@@ -5,7 +5,7 @@ package aaron.geist.myreader.constant;
  */
 public class DBContants {
 
-    public static final int pageSize = 5;
+    public static final int pageSize = 15;
     public static final String COLUMN_ID = "id";
 
     public static final String WEBSITE_TABLE_NAME = "website";

@@ -1,6 +1,5 @@
 package aaron.geist.myreader.loader;
 
-import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -39,7 +38,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     private DBManager mgr;
     private Website website = null;
-    private Boolean crawlSuccess = false;
+    private boolean crawlSuccess = false;
     private boolean isReverse = false;
     private AsyncCallback callback = null;
     private final List<Post> crawledPosts = new ArrayList<>();
@@ -62,7 +61,8 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         if (requests.length > 0) {
             crawledPosts.clear();
             this.website = requests[0].getWebsite();
-            crawl(requests[0].isReverse());
+            this.isReverse = requests[0].isReverse();
+            crawl();
         }
         return crawlSuccess;
     }
@@ -72,14 +72,13 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         callback.onTaskCompleted(crawlSuccess, crawledPosts, isReverse);
     }
 
-    public void crawl(boolean isReserve) {
+    private void crawl() {
         Log.d("", "start crawling site " + website.getName());
-        this.isReverse = isReserve;
 
         int pageNum = 0;
         int step = isReverse ? 1 : -1;
 
-        long targetPostId = isReserve ? mgr.getMinPostIdByWebsite(website.getId())
+        long targetPostId = isReverse ? mgr.getMinPostIdByWebsite(website.getId())
                 : mgr.getMaxPostIdByWebsite(Collections.singletonList(website.getId()));
 
         if (targetPostId > 0) {

@@ -20,11 +20,10 @@ public class DBManager {
 
     private volatile static DBManager instance = null;
 
-    private DBHelper helper;
     private SQLiteDatabase db;
 
     private DBManager() {
-        helper = new DBHelper();
+        DBHelper helper = new DBHelper();
         db = helper.getWritableDatabase();
     }
 
@@ -191,10 +190,14 @@ public class DBManager {
     public List<Post> getPosts(int pageNum, int startPostExtId, Collection<Long> websiteIds) {
         List<Post> posts = new ArrayList<Post>();
 
-        String inSelection = "(";
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+        String inSelection;
         for (Long websiteId : websiteIds) {
-            inSelection += String.valueOf(websiteId) + ",";
+            sb.append(websiteId);
+            sb.append(",");
         }
+        inSelection = sb.toString();
         inSelection = inSelection.substring(0, inSelection.length() - 1);
         inSelection += ")";
 
