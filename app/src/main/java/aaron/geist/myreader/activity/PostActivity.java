@@ -57,7 +57,10 @@ public class PostActivity extends AppCompatActivity {
 
     private void showPost() {
         title.setText(post.getTitle());
-        content.loadDataWithBaseURL(this.post.getUrl(), post.getContent(), "text/html", "utf-8", null);
+
+        // have image width auto scaled
+        String html = post.getContent().replace("<img", "<img style=\"max-width:100%;height:auto\"");
+        content.loadDataWithBaseURL(this.post.getUrl(), html, "text/html", "utf-8", null);
 
         if (post.isMarked()) {
             markBtn.setBackground(getDrawable(R.drawable.mark_yes));
