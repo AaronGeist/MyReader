@@ -8,9 +8,10 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity
     private static Context context;
 
     // android components
+    private Toolbar toolbar = null;
     private ListView postTitleListView = null;
     private RefreshLayout postRefresh = null;
     private BaseAdapter postTitleListAdapter = null;
@@ -118,7 +120,7 @@ public class MainActivity extends AppCompatActivity
      */
     private void initResources() {
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.fab);
@@ -200,6 +202,21 @@ public class MainActivity extends AppCompatActivity
                         .show();
 
                 return true;
+            }
+        });
+
+        final GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() { //使用SimpleOnGestureListener可以只覆盖实现自己想要的手势
+            @Override
+            public boolean onDoubleTap(MotionEvent e) { //DoubleTap手势的处理
+                postTitleListView.smoothScrollToPosition(0);
+                return super.onDoubleTap(e);
+            }
+        });
+
+        toolbar.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) { //使用GestureDetector对Toolbar进行手势监听
+                return gestureDetector.onTouchEvent(event);
             }
         });
     }

@@ -13,17 +13,9 @@
     tools:context="aaron.geist.myreader.activity.PostActivity"
     tools:showIn="@layout/post_main">
 
-    <TextView
-        android:id="@+id/singlePostTitle"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:textSize="20sp"
-        android:textColor="@color/font"/>
-
     <WebView
         android:id="@+id/singlePostContent"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/singlePostTitle"
         android:layout_alignParentStart="true" />
 </RelativeLayout>

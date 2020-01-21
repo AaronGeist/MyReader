@@ -2,10 +2,11 @@ package aaron.geist.myreader.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.ImageButton;
-import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -21,7 +22,7 @@ public class PostActivity extends AppCompatActivity {
 
     private Post post = null;
     private ImageButton markBtn = null;
-    private TextView title = null;
+    private Toolbar postToolbar = null;
     private WebView content = null;
 
     public static final String POST_DATA = "post_data";
@@ -33,7 +34,7 @@ public class PostActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.post_main);
-        Toolbar postToolbar = findViewById(R.id.postToolbar);
+        postToolbar = findViewById(R.id.postToolbar);
         setSupportActionBar(postToolbar);
         postToolbar.setNavigationIcon(R.drawable.close);
 
@@ -44,9 +45,7 @@ public class PostActivity extends AppCompatActivity {
         });
 
         markBtn = findViewById(R.id.markBtn);
-        title = findViewById(R.id.singlePostTitle);
         content = findViewById(R.id.singlePostContent);
-        content.setVerticalScrollBarEnabled(false);
         content.setHorizontalScrollBarEnabled(false);
 
         Intent intent = this.getIntent();
@@ -58,10 +57,9 @@ public class PostActivity extends AppCompatActivity {
     }
 
     private void showPost() {
-        title.setText(post.getTitle());
-
         // have image width auto scaled
         String html = post.getContent().replace("<img", "<img style=\"max-width:100%;height:auto\"");
+        html = String.format("<h3>%s</h3>\n%s", post.getTitle(), html);
         content.loadDataWithBaseURL(this.post.getUrl(), html, "text/html", "utf-8", null);
 
         if (post.isMarked()) {
@@ -78,6 +76,21 @@ public class PostActivity extends AppCompatActivity {
                 markBtn.setBackground(post.isMarked() ? getDrawable(R.drawable.mark_yes) : getDrawable(R.drawable.mark_no));
             }
         });
-    }
 
+
+        final GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() { //使用SimpleOnGestureListener可以只覆盖实现自己想要的手势
+            @Override
+            public boolean onDoubleTap(MotionEvent e) { //DoubleTap手势的处理
+                content.scrollTo(0, 0);
+                return super.onDoubleTap(e);
+            }
+        });
+
+        postToolbar.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) { //使用GestureDetector对Toolbar进行手势监听
+                return gestureDetector.onTouchEvent(event);
+            }
+        });
+    }
 }
