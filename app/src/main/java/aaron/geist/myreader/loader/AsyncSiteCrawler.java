@@ -1,6 +1,7 @@
 package aaron.geist.myreader.loader;
 
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.util.Log;
 
 import org.jsoup.Jsoup;
@@ -23,6 +24,7 @@ import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
 import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
+import aaron.geist.myreader.utils.BitmapUtils;
 import aaron.geist.myreader.utils.DateUtil;
 import aaron.geist.myreader.utils.FileDownloader;
 import aaron.geist.myreader.utils.UrlParser;
@@ -249,11 +251,12 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         return post;
     }
 
-    private String localizeImages(Elements contents, String site, int postId) {
+    private String localizeImages(Elements contents, String site, int postExternalId) {
         StringBuilder sb = new StringBuilder();
         for (Element content : contents) {
             // find images first
             Elements images = content.getElementsByTag("img");
+            int cnt = 0;
             for (Element img : images) {
                 // image link might have several attributes, try one by one
                 for (String attr : imageSrcAttr) {
@@ -262,7 +265,16 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
                         continue;
                     }
 
-                    String filePath = FileDownloader.download(src, "/myReader/images/" + site + "/" + postId + "/");
+                    cnt++;
+                    String filePath = FileDownloader.download(src, "/myReader/images/" + site + "/" + postExternalId + "/");
+                    if (cnt == 1) {
+                        long start = System.currentTimeMillis();
+                        String realPath = filePath.replace("file://", "");
+                        String destPath = Environment.getExternalStorageDirectory() + "/myReader/images/" + site + "/" + postExternalId + "/thumb.jpg";
+                        BitmapUtils.decodeSampledBitmapFromFd(realPath, 100, 100, destPath);
+                        Log.d("", "Created thumbnail, cost " + (System.currentTimeMillis() - start) + "ms");
+                    }
+
                     img.attr(attr, filePath);
                 }
             }
