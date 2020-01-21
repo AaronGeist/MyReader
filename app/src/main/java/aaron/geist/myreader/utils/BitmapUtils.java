@@ -33,6 +33,13 @@ public class BitmapUtils {
     // 如果是放大图片，filter决定是否平滑，如果是缩小图片，filter无影响
     private static Bitmap createScaleBitmap(Bitmap src, int dstWidth,
                                             int dstHeight) {
+
+        if (dstHeight == dstWidth) {
+            // 如果尺寸一样，先截取部分
+            int length = Math.min(src.getHeight(), src.getWidth());
+            src = Bitmap.createBitmap(src, 0, 0, length, length);
+        }
+
         Bitmap dst = Bitmap.createScaledBitmap(src, dstWidth, dstHeight, false);
         if (src != dst) { // 如果没有缩放，那么不回收
             src.recycle(); // 释放Bitmap的native像素数组

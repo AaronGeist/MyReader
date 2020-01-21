@@ -59,7 +59,9 @@ public class SubscribeManager {
         website.setInnerPostSelect(siteConfig.getInnerPostSelect());
         website.setInnerTimestampSelect(siteConfig.getInnerTimestampSelect());
 
-        mgr.addWebsite(website);
+        long websiteId = mgr.addWebsite(website);
+        website.setId(websiteId);
+
         websiteCache.put(website.getName(), website);
     }
 

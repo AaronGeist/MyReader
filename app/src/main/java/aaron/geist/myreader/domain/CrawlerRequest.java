@@ -8,6 +8,7 @@ public class CrawlerRequest {
 
     private Website website;
     private boolean reverse;
+    private int targetNum;
 
     public Website getWebsite() {
         return website;
@@ -23,5 +24,13 @@ public class CrawlerRequest {
 
     public void setReverse(boolean reverse) {
         this.reverse = reverse;
+    }
+
+    public int getTargetNum() {
+        return targetNum;
+    }
+
+    public void setTargetNum(int targetNum) {
+        this.targetNum = targetNum;
     }
 }

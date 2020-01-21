@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -44,6 +45,7 @@ import aaron.geist.myreader.extend.PostTitleListAdapter;
 import aaron.geist.myreader.extend.RefreshLayout;
 import aaron.geist.myreader.loader.AsyncCallback;
 import aaron.geist.myreader.loader.AsyncSiteCrawler;
+import aaron.geist.myreader.subscriber.SubscribeManager;
 import aaron.geist.myreader.utils.ToastUtil;
 
 public class MainActivity extends AppCompatActivity
@@ -109,8 +111,6 @@ public class MainActivity extends AppCompatActivity
                     REQUEST_EXTERNAL_STORAGE
             );
         }
-
-        ToastUtil.toastLong("权限检测通过");
     }
 
     /**
@@ -219,7 +219,6 @@ public class MainActivity extends AppCompatActivity
         List<Website> websites = dbManager.getAllWebsites();
 
         if (websites == null || websites.size() == 0) {
-            Log.i(TAG, "Not website stored yet.");
             ToastUtil.toastLong("请先配置至少一个订阅网站");
             return;
         }
@@ -292,7 +291,7 @@ public class MainActivity extends AppCompatActivity
         postRefresh.setRefreshing(false);
         postRefresh.setLoading(false);
         if (crawlSuccess) {
-            ToastUtil.toastLong("加载完毕，新增 " + posts.size() + "条");
+            ToastUtil.toastLong("加载完毕，新增 " + posts.size() + " 条");
 
             if (isReverse) {
                 postList.addAll(posts);
@@ -307,6 +306,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onRefresh() {
+        ToastUtil.toastShort("看看有什么新货");
+
         // define specified executor to enable parallel for AsyncTask
         Executor executor = Executors.newFixedThreadPool(10);
         List<Website> websites = dbManager.getAllWebsites();
@@ -314,6 +315,8 @@ public class MainActivity extends AppCompatActivity
             CrawlerRequest request = new CrawlerRequest();
             request.setWebsite(website);
             request.setReverse(false);
+            // TODO make it a setting
+            request.setTargetNum(20);
 
             AsyncSiteCrawler crawler = new AsyncSiteCrawler();
             crawler.setCallback(this);
@@ -323,30 +326,16 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLoad() {
-        List<Website> websites = dbManager.getAllWebsites();
+        ToastUtil.toastShort("努力加载中");
 
+        Map<String, Website> websites = SubscribeManager.getInstance().getAll();
         Collection<Long> websiteIds = new ArrayList<>();
-        for (Website website : websites) {
+        for (Website website : websites.values()) {
             websiteIds.add(website.getId());
         }
 
-        // load local DB first
+        // load posts from local DB
         List<Post> posts = dbManager.getPosts(++currentDbPageNum, startPostId, websiteIds);
-        if (posts.size() > 0) {
-            this.onTaskCompleted(true, posts, true);
-            return;
-        }
-
-        for (Website website : websites) {
-            // if all loaded, then load from online
-            AsyncSiteCrawler crawler = new AsyncSiteCrawler();
-            crawler.setCallback(this);
-            CrawlerRequest request = new CrawlerRequest();
-            request.setWebsite(website);
-            request.setReverse(true);
-            crawler.execute(request);
-        }
-
-        ToastUtil.toastLong("onLoad 加载完毕");
+        this.onTaskCompleted(true, posts, true);
     }
 }

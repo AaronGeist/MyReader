@@ -37,12 +37,13 @@ import aaron.geist.myreader.utils.UrlParser;
  */
 public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean> {
 
-    private static final int MAX_POST_NUM_TO_LOAD = 5;
+    private static final int MAX_POST_NUM_TO_LOAD = 50;
 
     private DBManager mgr;
     private Website website = null;
     private boolean crawlSuccess = false;
     private boolean isReverse = false;
+    private int targetNum = MAX_POST_NUM_TO_LOAD;
     private AsyncCallback callback = null;
     private final List<Post> crawledPosts = new ArrayList<>();
 
@@ -67,6 +68,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             crawledPosts.clear();
             this.website = requests[0].getWebsite();
             this.isReverse = requests[0].isReverse();
+            this.targetNum = requests[0].getTargetNum();
             crawl();
         }
         return crawlSuccess;
@@ -80,33 +82,18 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
     private void crawl() {
         Log.d("", "start crawling site " + website.getName());
 
-        int pageNum = 0;
-        int step = isReverse ? 1 : -1;
-
-        long targetPostId = isReverse ? mgr.getMinPostIdByWebsite(website.getId())
-                : mgr.getMaxPostIdByWebsite(Collections.singletonList(website.getId()));
-
-        if (targetPostId > 0) {
-            // find page num of targetPostId
-            int lastPostId;
-            do {
-                // TODO pageNum might be cached, so that next search wouldn't take too long
-                lastPostId = findLastPostInCurrentPage(++pageNum);
-            } while (lastPostId > targetPostId);
-        } else {
-            // first time to crawl posts
-            pageNum = 1;
-        }
+        int pageNum = 1;
+        long existingMaxPostExternalId = mgr.getMaxPostIdByWebsite(Collections.singletonList(website.getId()));
 
         while (!stopCrawl) {
-            crawlSinglePage(pageNum, targetPostId, crawledPosts);
-            pageNum += step;
+            crawlSinglePage(pageNum, existingMaxPostExternalId, crawledPosts);
+            pageNum += 1;
         }
 
         Log.d("", "finish crawling site " + website.getName());
     }
 
-    private void crawlSinglePage(int pageNum, final long targetPostId, final List<Post> postResults) {
+    private void crawlSinglePage(int pageNum, final long existingMaxPostExternalId, final List<Post> postResults) {
         if (pageNum <= 0) {
             stopCrawl = true;
             return;
@@ -164,19 +151,23 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
                     }
 
                     // post already exists
-                    if (mgr.getPostByExternalId(UrlParser.getPostId(postUrl)) != null) {
+                    int externalId = UrlParser.getPostId(postUrl);
+                    if (mgr.getPostByExternalId(externalId) != null) {
+                        stopCrawl = true;
+                        return;
+                    }
+
+                    // crawling existing post
+                    if (externalId < existingMaxPostExternalId) {
+                        stopCrawl = true;
                         return;
                     }
 
                     Post res = crawlSinglePost(postUrl);
                     if (res != null) {
-                        if (!isReverse) {
-                            res.setInOrder(res.getExternalId() > targetPostId);
-                            postResults.add(0, res);
-                        } else {
-                            res.setInOrder(res.getExternalId() < targetPostId);
-                            postResults.add(res);
-                        }
+                        res.setInOrder(res.getExternalId() > existingMaxPostExternalId);
+                        postResults.add(0, res);
+
                         mgr.addPost(res);
                     }
 
@@ -191,38 +182,11 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             Log.d("", e.getMessage());
         }
 
-        if (postResults.size() >= MAX_POST_NUM_TO_LOAD) {
+        if (postResults.size() >= targetNum) {
             stopCrawl = true;
         }
 
         crawlSuccess = true;
-    }
-
-    private int findLastPostInCurrentPage(int pageNum) {
-        Log.d("", "crawling page " + String.format(website.getNavigationUrl(), pageNum));
-        Document document = null;
-        URL url = null;
-        try {
-            url = new URL(String.format(website.getNavigationUrl(), pageNum));
-        } catch (MalformedURLException e) {
-            Log.d("", "MalformedURLException: " + e.getMessage());
-        }
-
-        try {
-            document = Jsoup.parse(url, LoaderConstants.DEFAULT_LOAD_TIMEOUT_MILLISEC);
-        } catch (IOException e) {
-            Log.d("", "IOException: " + e.getMessage());
-        }
-
-        Log.d("", "finish loading page " + String.format(website.getNavigationUrl(), pageNum));
-        Element body = document.body();
-        Log.d("", "post entry tag=" + website.getPostEntryTag());
-        Elements posts = body.select(website.getPostEntryTag());
-
-        Log.d("", "find post number=" + posts.size());
-
-        Element lastPost = posts.last();
-        return UrlParser.getPostId(lastPost.attr(HtmlConstants.ATTR_HREF));
     }
 
     private Post crawlSinglePost(String urlStr) {
