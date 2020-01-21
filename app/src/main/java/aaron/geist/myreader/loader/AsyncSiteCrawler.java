@@ -114,7 +114,15 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             Log.d("", "IOException: " + e.getMessage());
         }
 
+        // maybe this website find the crawler and forbidden
+        if (document == null) {
+            Log.d("", "Fail to crawl: " + url.getPath());
+            stopCrawl = true;
+            return;
+        }
+
         Element body = document.body();
+
         Elements posts = body.select(website.getPostEntryTag());
 
         // no longer valid pageNum, being zero or exceeding the maximum

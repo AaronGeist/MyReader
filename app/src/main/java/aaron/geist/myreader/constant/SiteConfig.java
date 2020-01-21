@@ -14,6 +14,8 @@ public enum SiteConfig {
 //    infoq("infoQ", "http://www.infoq.com/", "cn/articles", "#content div.news_type2 > h2 > a", "div.text_info_article", "", ""), //
     ; //
 
+    // 爱范儿   api  https://sso.ifanr.com/api/v5/wp/web-feed/?published_at__lte=2020-01-21 13:45:26&limit=50&offset=0
+
     private String name;
     private String rootUrl;
     private String postsPath;

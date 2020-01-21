@@ -113,9 +113,12 @@ public class Post implements Serializable, Comparable {
     public int compareTo(Object another) {
         Post post = (Post) another;
 
-        int res = Long.valueOf(this.getTimestamp()).compareTo(post.getTimestamp());
+        int res = Long.compare(this.getTimestamp(), post.getTimestamp());
         if (res == 0) {
-            res = Integer.valueOf(this.getExternalId()).compareTo(post.getExternalId());
+            res = Long.compare(this.getWebsiteId(), post.getWebsiteId());
+            if (res == 0) {
+                res = Integer.compare(this.getExternalId(), post.getExternalId());
+            }
         }
 
         // in desc order, so add minus in the front

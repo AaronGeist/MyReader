@@ -248,7 +248,7 @@ public class MainActivity extends AppCompatActivity
 
         postList.addAll(dbManager.getPosts(currentDbPageNum, startPostId, websiteIds));
 
-        // sort with timestamp, then externalId
+        // sort with timestamp, then website, then externalId
         Collections.sort(postList);
     }
 
@@ -315,6 +315,10 @@ public class MainActivity extends AppCompatActivity
             } else {
                 postList.addAll(0, posts);
             }
+
+            // re-order all posts
+            Collections.sort(postList);
+
             postTitleListAdapter.notifyDataSetChanged();
         } else {
             ToastUtil.toastLong("加载失败");
