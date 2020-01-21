@@ -46,6 +46,8 @@ public class PostActivity extends AppCompatActivity {
         markBtn = findViewById(R.id.markBtn);
         title = findViewById(R.id.singlePostTitle);
         content = findViewById(R.id.singlePostContent);
+        content.setVerticalScrollBarEnabled(false);
+        content.setHorizontalScrollBarEnabled(false);
 
         Intent intent = this.getIntent();
         post = (Post) intent.getSerializableExtra(POST_DATA);

@@ -141,6 +141,8 @@ public class MainActivity extends AppCompatActivity
 
         // set list view style
         postTitleListView = findViewById(R.id.postTitleList);
+        postTitleListView.setVerticalScrollBarEnabled(false);
+        postTitleListView.setHorizontalScrollBarEnabled(false);
         Drawable Null = new ColorDrawable();
         Null.setAlpha(0);
         postTitleListView.setDivider(Null);
