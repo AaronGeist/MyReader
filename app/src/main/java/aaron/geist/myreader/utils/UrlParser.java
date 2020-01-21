@@ -1,7 +1,5 @@
 package aaron.geist.myreader.utils;
 
-import android.util.Log;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,7 +15,6 @@ public class UrlParser {
 
         if (m.matches()) {
             result = Integer.valueOf(m.group(1));
-            Log.d("", "parse post ID: " + result);
         }
 
         return result;

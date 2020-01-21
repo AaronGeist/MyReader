@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.database.DBManager;
@@ -303,6 +305,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onRefresh() {
+        // define specified executor to enable parallel for AsyncTask
+        Executor executor = Executors.newFixedThreadPool(10);
         List<Website> websites = dbManager.getAllWebsites();
         for (Website website : websites) {
             CrawlerRequest request = new CrawlerRequest();
@@ -311,7 +315,7 @@ public class MainActivity extends AppCompatActivity
 
             AsyncSiteCrawler crawler = new AsyncSiteCrawler();
             crawler.setCallback(this);
-            crawler.execute(request);
+            crawler.executeOnExecutor(executor, request);
         }
     }
 

@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import aaron.geist.myreader.constant.HtmlConstants;
 import aaron.geist.myreader.constant.LoaderConstants;
@@ -103,7 +106,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         Log.d("", "finish crawling site " + website.getName());
     }
 
-    private void crawlSinglePage(int pageNum, long targetPostId, List<Post> postResults) {
+    private void crawlSinglePage(int pageNum, final long targetPostId, final List<Post> postResults) {
         if (pageNum <= 0) {
             stopCrawl = true;
             return;
@@ -133,7 +136,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             return;
         }
 
-        List<Element> postList = posts.subList(0, posts.size());
+        final List<Element> postList = posts.subList(0, posts.size());
         // if we try to pull latest posts, we find max postId in DB is n,
         // then we trying to find n-1, n-2...n-m, in which m is the max post num to load
         // so the list is reversed here.
@@ -142,36 +145,56 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         }
 
         Log.d("", "find post number=" + posts.size());
-        Element post;
-        String postUrl;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+
         for (int i = 0, size = postList.size(); i < size && !stopCrawl; i++) {
-            post = postList.get(i);
 
-            postUrl = post.attr(HtmlConstants.ATTR_HREF);
-            if (!postUrl.startsWith("http")) {
-                postUrl = website.getHomePage() + postUrl;
-            }
+            final Element post = postList.get(i);
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    long start = System.currentTimeMillis();
+                    String postUrl = post.attr(HtmlConstants.ATTR_HREF);
 
-            // post already exists
-            if (mgr.getPostByExternalId(UrlParser.getPostId(postUrl)) != null) {
-                continue;
-            }
+                    // some link contains full url path, so we don't need to do anything.
+                    // Others is only part, so need to add root url.
+                    if (!postUrl.startsWith("http")) {
+                        postUrl = website.getHomePage() + postUrl;
+                    }
 
-            Post res = crawlSinglePost(postUrl);
-            if (res != null) {
-                if (!isReverse) {
-                    res.setInOrder(res.getExternalId() > targetPostId);
-                    postResults.add(0, res);
-                } else {
-                    res.setInOrder(res.getExternalId() < targetPostId);
-                    postResults.add(res);
+                    // post already exists
+                    if (mgr.getPostByExternalId(UrlParser.getPostId(postUrl)) != null) {
+                        return;
+                    }
+
+                    Post res = crawlSinglePost(postUrl);
+                    if (res != null) {
+                        if (!isReverse) {
+                            res.setInOrder(res.getExternalId() > targetPostId);
+                            postResults.add(0, res);
+                        } else {
+                            res.setInOrder(res.getExternalId() < targetPostId);
+                            postResults.add(res);
+                        }
+                        mgr.addPost(res);
+                    }
+
+                    Log.d("", "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
                 }
-                mgr.addPost(res);
-            }
-            if (postResults.size() >= MAX_POST_NUM_TO_LOAD) {
-                stopCrawl = true;
-            }
+            });
         }
+
+        try {
+            executorService.awaitTermination(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Log.d("", e.getMessage());
+        }
+
+        if (postResults.size() >= MAX_POST_NUM_TO_LOAD) {
+            stopCrawl = true;
+        }
+
         crawlSuccess = true;
     }
 
