@@ -347,8 +347,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLoad() {
-        ToastUtil.toastShort("努力加载中");
-
         Map<String, Website> websites = SubscribeManager.getInstance().getAll();
         Collection<Long> websiteIds = new ArrayList<>();
         for (Website website : websites.values()) {

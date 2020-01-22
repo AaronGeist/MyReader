@@ -1,7 +1,5 @@
 package aaron.geist.myreader.utils;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Environment;
 import android.util.Log;
 
@@ -18,50 +16,79 @@ import java.net.URL;
 
 public class FileDownloader {
 
-    public static Bitmap downloadImage(String src) {
-        try {
-            URL url = new URL(src);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(5000);
-            conn.setRequestMethod("GET");
-
-            if (conn.getResponseCode() == 200) {
-                InputStream inStream = conn.getInputStream();
-                Bitmap bitmap = BitmapFactory.decodeStream(inStream);
-                return bitmap;
-            }
-        } catch (Exception e) {
-            Log.e("", "download exception", e);
-        }
-        return null;
-    }
-
     public static String download(String src, String path) {
         File dirFile = new File(Environment.getExternalStorageDirectory() + path);
 
         if (!dirFile.exists()) {
-            // TODO check before write files
             dirFile.mkdirs();
         }
 
-        String fileName = "";
+        String filePath;
         try {
-            fileName = getFileName(src);
-            File myCaptureFile = new File(Environment.getExternalStorageDirectory() + path + fileName);
+            String fileName = getFileName(src);
+            filePath = Environment.getExternalStorageDirectory() + path + fileName;
+
+            File myCaptureFile = new File(filePath);
             if (!myCaptureFile.exists()) {
-                // TODO check?
                 myCaptureFile.createNewFile();
+            } else {
+                if (myCaptureFile.length() > 0) {
+                    // file already downloaded, skip
+                    return filePath;
+                }
             }
             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(myCaptureFile));
-            downloadImage(src).compress(Bitmap.CompressFormat.JPEG, 80, bos);
-            bos.flush();
-            bos.close();
+
+            try {
+                URL url = new URL(src);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(5000);
+                conn.setRequestMethod("GET");
+
+                if (conn.getResponseCode() == 200) {
+                    InputStream inStream = conn.getInputStream();
+
+                    int byteCount;
+                    byte[] bytes = new byte[1024];
+                    while ((byteCount = inStream.read(bytes)) != -1) {
+                        bos.write(bytes, 0, byteCount);
+                    }
+                    inStream.close();
+                    bos.flush();
+                    bos.close();
+
+                }
+            } catch (Exception e) {
+                Log.e("", "download exception", e);
+            }
+
+            if (ImageUtil.isGifFile(myCaptureFile)) {
+                if (!fileName.toLowerCase().endsWith("gif")) {
+                    filePath += ".gif";
+                    FileUtil.move(myCaptureFile, new File(filePath));
+                }
+            } else {
+//                // compression
+//                InputStream inputStream = new FileInputStream(filePath);
+//                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+//
+//                String newFilePath = filePath + ".jpg";
+//                File newFile = new File(newFilePath);
+//                if (!newFile.exists()) {
+//                    newFile.createNewFile();
+//                }
+//                BufferedOutputStream newBos = new BufferedOutputStream(new FileOutputStream(newFile));
+//
+//                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, newBos);
+//                FileUtil.delete(myCaptureFile);
+//                filePath = newFilePath;
+            }
         } catch (Exception e) {
             Log.e("", "download exception", e);
             return "";
         }
 
-        return "file://" + Environment.getExternalStorageDirectory() + path + fileName;
+        return filePath;
 
     }
 

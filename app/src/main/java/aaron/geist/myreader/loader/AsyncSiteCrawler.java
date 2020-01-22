@@ -264,13 +264,12 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
                     String filePath = FileDownloader.download(src, "/myReader/images/" + site + "/" + postExternalId + "/");
                     if (cnt == 1) {
                         long start = System.currentTimeMillis();
-                        String realPath = filePath.replace("file://", "");
                         String destPath = Environment.getExternalStorageDirectory() + "/myReader/images/" + site + "/" + postExternalId + "/thumb.jpg";
-                        BitmapUtils.decodeSampledBitmapFromFd(realPath, 100, 100, destPath);
+                        BitmapUtils.decodeSampledBitmapFromFd(filePath, 100, 100, destPath);
                         Log.d("", "Created thumbnail, cost " + (System.currentTimeMillis() - start) + "ms");
                     }
 
-                    img.attr(attr, filePath);
+                    img.attr(attr, "file://" + filePath);
                 }
             }
             sb.append(content.html()).append("\n");
