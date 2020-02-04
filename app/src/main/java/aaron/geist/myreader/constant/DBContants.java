@@ -10,6 +10,7 @@ public class DBContants {
 
     public static final String WEBSITE_TABLE_NAME = "website";
     public static final String WEBSITE_COLUMN_NAME = "name";
+    public static final String WEBSITE_COLUMN_TYPE = "type";
     public static final String WEBSITE_COLUMN_HOMEPAGE = "url";
     public static final String WEBSITE_COLUMN_POST_ENTRY_TAG = "postEntryTag";
     public static final String WEBSITE_COLUMN_NAVIGATION_URL = "navigationUrl";

@@ -56,6 +56,7 @@ public class DBManager {
 
             ContentValues cv = new ContentValues();
             cv.put(DBContants.WEBSITE_COLUMN_NAME, website.getName());
+            cv.put(DBContants.WEBSITE_COLUMN_TYPE, website.getType());
             cv.put(DBContants.WEBSITE_COLUMN_HOMEPAGE, website.getHomePage());
             cv.put(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG, website.getPostEntryTag());
             cv.put(DBContants.WEBSITE_COLUMN_NAVIGATION_URL, website.getNavigationUrl());
@@ -95,6 +96,7 @@ public class DBManager {
             Website website = new Website();
             website.setId(c.getInt(c.getColumnIndex(DBContants.COLUMN_ID)));
             website.setName(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAME)));
+            website.setType(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_TYPE)));
             website.setHomePage(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_HOMEPAGE)));
             website.setPostEntryTag(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG)));
             website.setNavigationUrl(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAVIGATION_URL)));

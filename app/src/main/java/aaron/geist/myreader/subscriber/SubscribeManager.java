@@ -53,6 +53,7 @@ public class SubscribeManager {
     public void subscribe(SiteConfig siteConfig) {
         Website website = new Website();
         website.setName(siteConfig.getName());
+        website.setType(siteConfig.getType());
         website.setHomePage(siteConfig.getRootUrl());
         website.setNavigationUrl(siteConfig.getRootUrl() + siteConfig.getPostsPath() + siteConfig.getNavigationClassName());
         website.setPostEntryTag(siteConfig.getOuterPostSelect());

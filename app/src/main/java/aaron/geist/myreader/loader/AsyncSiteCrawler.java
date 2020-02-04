@@ -4,15 +4,21 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -85,12 +91,111 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         int pageNum = 1;
         long existingMaxPostExternalId = mgr.getMaxPostIdByWebsite(Collections.singletonList(website.getId()));
 
-        while (!stopCrawl) {
-            crawlSinglePage(pageNum, existingMaxPostExternalId, crawledPosts);
-            pageNum += 1;
+        switch (website.getType().toLowerCase()) {
+            case "default":
+                while (!stopCrawl) {
+                    crawlSinglePage(pageNum, existingMaxPostExternalId, crawledPosts);
+                    pageNum += 1;
+                }
+                break;
+            case "api":
+                crawlCertainPage(existingMaxPostExternalId, crawledPosts);
+                break;
+            default:
+                Log.e("", "Not supported website type: " + website.getType());
+                break;
         }
 
+
         Log.d("", "finish crawling site " + website.getName());
+    }
+
+    private void crawlCertainPage(final long existingMaxPostExternalId, final List<Post> postResults) {
+        Log.d("", "crawling page " + website.getHomePage());
+
+        final List<String> postUrls = new ArrayList<>();
+        try {
+            URL url = new URL(website.getHomePage());
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setRequestMethod("GET");
+
+            if (conn.getResponseCode() == 200) {
+                InputStream inStream = conn.getInputStream();
+
+                ByteArrayOutputStream result = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = inStream.read(buffer)) != -1) {
+                    result.write(buffer, 0, length);
+                }
+                String str = result.toString(StandardCharsets.UTF_8.name());
+                JSONObject jsonObject = new JSONObject(str);
+                JSONArray jsonArray = (JSONArray) jsonObject.get("objects");
+
+                int size = jsonArray.length();
+                for (int i = 0; i < size; i++) {
+                    postUrls.add((String) jsonArray.getJSONObject(i).get("post_url"));
+                }
+            } else {
+                Log.d("", "Fail to crawl: " + url.getPath());
+                stopCrawl = true;
+                return;
+            }
+        } catch (Exception e) {
+            Log.d("", "IOException: " + e.getMessage());
+        }
+
+
+        Log.d("", "find post number=" + postUrls.size());
+
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+        for (int i = 0, size = postUrls.size(); i < size && !stopCrawl; i++) {
+
+            final String postUrl = postUrls.get(i);
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    long start = System.currentTimeMillis();
+
+                    // post already exists
+                    int externalId = UrlParser.getPostId(postUrl);
+                    if (mgr.getPostByExternalId(externalId) != null) {
+                        stopCrawl = true;
+                        return;
+                    }
+
+                    // crawling existing post
+                    if (externalId < existingMaxPostExternalId) {
+                        stopCrawl = true;
+                        return;
+                    }
+
+                    Post res = crawlSinglePost(postUrl);
+                    if (res != null) {
+                        res.setInOrder(res.getExternalId() > existingMaxPostExternalId);
+                        postResults.add(0, res);
+
+                        mgr.addPost(res);
+                    }
+
+                    Log.d("", "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
+                }
+            });
+        }
+
+        try {
+            executorService.awaitTermination(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Log.d("", e.getMessage());
+        }
+
+        if (postResults.size() >= targetNum) {
+            stopCrawl = true;
+        }
+
+        crawlSuccess = true;
     }
 
     private void crawlSinglePage(int pageNum, final long existingMaxPostExternalId, final List<Post> postResults) {

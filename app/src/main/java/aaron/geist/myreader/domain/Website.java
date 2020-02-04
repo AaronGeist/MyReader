@@ -15,6 +15,11 @@ public class Website {
      * name of this website.
      */
     private String name = "";
+
+    /**
+     * type of website, could be default/api
+     */
+    private String type = "default";
     /**
      * url of home page.
      */
@@ -48,6 +53,14 @@ public class Website {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getHomePage() {
