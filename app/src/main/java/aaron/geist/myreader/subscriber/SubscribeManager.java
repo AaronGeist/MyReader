@@ -45,6 +45,10 @@ public class SubscribeManager {
         return instance;
     }
 
+    public boolean hasSubscribed(String siteName) {
+        return websiteCache.containsKey(siteName);
+    }
+
     /**
      * Parse home page and add site to DB asynchronously.
      *

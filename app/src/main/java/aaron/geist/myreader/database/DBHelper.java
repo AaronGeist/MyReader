@@ -14,7 +14,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "zreader.db";
     // add version to call onUpgrade
-    private static final int DATABASE_VERSION = 8;
+    private static final int DATABASE_VERSION = 9;
 
     public DBHelper() {
         super(MainActivity.getContext(), DATABASE_NAME, null, DATABASE_VERSION);
@@ -30,6 +30,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 + DBContants.WEBSITE_COLUMN_POST_ENTRY_TAG + " VARCHAR, "
                 + DBContants.WEBSITE_COLUMN_NAVIGATION_URL + " VARCHAR, "
                 + DBContants.WEBSITE_COLUMN_SELECT_INNER_POST + " VARCHAR, "
+                + DBContants.WEBSITE_COLUMN_TYPE + " VARCHAR, "
                 + DBContants.WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP + " VARCHAR)");
 
         db.execSQL("CREATE TABLE IF NOT EXISTS " + DBContants.POST_TABLE_NAME

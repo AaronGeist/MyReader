@@ -10,14 +10,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.constant.SiteConfig;
-import aaron.geist.myreader.database.DBManager;
-import aaron.geist.myreader.domain.Website;
 import aaron.geist.myreader.subscriber.SubscribeManager;
 import aaron.geist.myreader.utils.ToastUtil;
 
@@ -27,17 +23,12 @@ public class SubscribeItemAdapter extends RecyclerView.Adapter<SubscribeItemAdap
     private Context mContext;
 
     private SubscribeManager subscribeManager;
-    private Map<String, Website> websiteMap = new HashMap<>();
 
     public SubscribeItemAdapter(Context context, List<SiteConfig> items) {
         super();
         mItems = items;
         mContext = context;
         subscribeManager = SubscribeManager.getInstance();
-        List<Website> websites = DBManager.getInstance().getAllWebsites();
-        for (Website website : websites) {
-            websiteMap.put(website.getName(), website);
-        }
     }
 
     @Override
@@ -51,37 +42,23 @@ public class SubscribeItemAdapter extends RecyclerView.Adapter<SubscribeItemAdap
         final SiteConfig siteConfig = mItems.get(position);
         holder.tv.setText(siteConfig.getName());
 
-        if (websiteMap.containsKey(siteConfig.getName())) {
+        if (subscribeManager.hasSubscribed(siteConfig.getName())) {
             // already subscribed
             holder.btn.setText(R.string.website_unsub);
-            holder.btn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    ToastUtil.toastLong(siteConfig.getName());
+        }
+
+        holder.btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (subscribeManager.hasSubscribed(siteConfig.getName())) {
+                    ToastUtil.toastLong("取消订阅：" + siteConfig.getName());
                     subscribeManager.unsubscribe(siteConfig);
                     ((Button) v).setText(R.string.website_sub);
-                }
-            });
-        } else {
-            holder.btn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    ToastUtil.toastLong(siteConfig.getName());
+                } else {
+                    ToastUtil.toastLong("订阅：" + siteConfig.getName());
                     subscribeManager.subscribe(siteConfig);
                     ((Button) v).setText(R.string.website_unsub);
                 }
-            });
-        }
-
-        holder.tv.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                String siteId = map.get(DBContants.COLUMN_ID);
-//
-//                Intent intent = new Intent();
-//                intent.putExtra(DBContants.POST_COLUMN_EXTERNAL_ID, Long.valueOf(siteId));
-//                intent.setClass(view.getContext(), PostTitleListActivity.class);
-//                view.getContext().startActivity(intent);
             }
         });
     }

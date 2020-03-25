@@ -71,7 +71,11 @@ public class DBManager {
 
             } else {
                 siteId = db.insert(DBContants.WEBSITE_TABLE_NAME, null, cv);
-                Log.d("", "addSite website successful, siteId=" + siteId);
+                if (siteId == -1) {
+                    Log.e("", "addSite failed, name=" + website.getName());
+                } else {
+                    Log.d("", "addSite website successful, siteId=" + siteId);
+                }
             }
             db.setTransactionSuccessful();
         } finally {
