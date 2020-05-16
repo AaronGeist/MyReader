@@ -5,6 +5,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
+import com.google.common.base.Joiner;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -145,6 +147,8 @@ public class DBManager {
             cv.put(DBContants.POST_COLUMN_URL, post.getUrl());
             cv.put(DBContants.POST_COLUMN_WEBSITE_ID, post.getWebsiteId());
             cv.put(DBContants.POST_COLUMN_IN_ORDER, post.isInOrder());
+            cv.put(DBContants.POST_COLUMN_HASH, post.getHash());
+
 
             if (c.moveToNext()) {
                 postId = c.getInt(c.getColumnIndex(DBContants.COLUMN_ID));
@@ -187,6 +191,37 @@ public class DBManager {
             post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
             post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
+            post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
+            posts.add(post);
+        }
+        c.close();
+        return posts;
+    }
+
+    public List<Post> getLatestPosts(Collection<Long> websiteIds, int offset, int limit) {
+        List<Post> posts = new ArrayList<>();
+
+        String inSelection = "(" +
+                Joiner.on(",").join(websiteIds) +
+                ")";
+
+        Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
+                DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection, null, null, null,
+                DBContants.POST_COLUMN_TIMESTAMP + " DESC, " + DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
+                offset * limit + "," + limit);
+        while (c.moveToNext()) {
+            Post post = new Post();
+            post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));
+            post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
+            post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
+            post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
+            post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
+            post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
+            post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
+            post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
+            post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
+            post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
+            post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
             posts.add(post);
         }
         c.close();
@@ -223,6 +258,7 @@ public class DBManager {
             post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
             post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
+            post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
             posts.add(post);
         }
         c.close();
@@ -245,6 +281,7 @@ public class DBManager {
             post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
             post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
             post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
+            post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
         }
         c.close();
         return post;
@@ -260,6 +297,17 @@ public class DBManager {
         }
         c.close();
         return post;
+    }
+
+    public boolean isPostExists(String hash) {
+        boolean result = false;
+        Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
+                DBContants.POST_COLUMN_HASH + "=" + hash, null, null, null, null);
+        while (c.moveToNext()) {
+            result = true;
+        }
+        c.close();
+        return result;
     }
 
 //    public List<String> getAllPostTitleByWebsite(long siteId) {

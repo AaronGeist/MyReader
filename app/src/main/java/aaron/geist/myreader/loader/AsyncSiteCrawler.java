@@ -156,34 +156,25 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         for (int i = 0, size = postUrls.size(); i < size && !stopCrawl; i++) {
 
             final String postUrl = postUrls.get(i);
-            executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    long start = System.currentTimeMillis();
+            executorService.submit(() -> {
+                long start = System.currentTimeMillis();
 
-                    // post already exists
-                    int externalId = UrlParser.getPostId(postUrl);
-                    if (mgr.getPostByExternalId(externalId) != null) {
-                        stopCrawl = true;
-                        return;
-                    }
-
-                    // crawling existing post
-                    if (externalId < existingMaxPostExternalId) {
-                        stopCrawl = true;
-                        return;
-                    }
-
-                    Post res = crawlSinglePost(postUrl);
-                    if (res != null) {
-                        res.setInOrder(res.getExternalId() > existingMaxPostExternalId);
-                        postResults.add(0, res);
-
-                        mgr.addPost(res);
-                    }
-
-                    Log.d("", "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
+                // post already exists
+                String hash = UrlParser.getMd5Digest(postUrl);
+                if (mgr.isPostExists(hash)) {
+                    stopCrawl = true;
+                    return;
                 }
+
+                Post res = crawlSinglePost(postUrl);
+                if (res != null) {
+                    res.setInOrder(res.getExternalId() > existingMaxPostExternalId);
+                    postResults.add(0, res);
+
+                    mgr.addPost(res);
+                }
+
+                Log.d("", "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
             });
         }
 
@@ -253,41 +244,32 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         for (int i = 0, size = postList.size(); i < size && !stopCrawl; i++) {
 
             final Element post = postList.get(i);
-            executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    long start = System.currentTimeMillis();
-                    String postUrl = post.attr(HtmlConstants.ATTR_HREF);
+            executorService.submit(() -> {
+                long start = System.currentTimeMillis();
+                String postUrl = post.attr(HtmlConstants.ATTR_HREF);
 
-                    // some link contains full url path, so we don't need to do anything.
-                    // Others is only part, so need to add root url.
-                    if (!postUrl.startsWith("http")) {
-                        postUrl = website.getHomePage() + postUrl;
-                    }
-
-                    // post already exists
-                    int externalId = UrlParser.getPostId(postUrl);
-                    if (mgr.getPostByExternalId(externalId) != null) {
-                        stopCrawl = true;
-                        return;
-                    }
-
-                    // crawling existing post
-                    if (externalId < existingMaxPostExternalId) {
-                        stopCrawl = true;
-                        return;
-                    }
-
-                    Post res = crawlSinglePost(postUrl);
-                    if (res != null) {
-                        res.setInOrder(res.getExternalId() > existingMaxPostExternalId);
-                        postResults.add(0, res);
-
-                        mgr.addPost(res);
-                    }
-
-                    Log.d(postUrl, "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
+                // some link contains full url path, so we don't need to do anything.
+                // Others is only part, so need to add root url.
+                if (!postUrl.startsWith("http")) {
+                    postUrl = website.getHomePage() + postUrl;
                 }
+
+                // post already exists
+                String hash = UrlParser.getMd5Digest(postUrl);
+                if (mgr.isPostExists(hash)) {
+                    stopCrawl = true;
+                    return;
+                }
+
+                Post res = crawlSinglePost(postUrl);
+                if (res != null) {
+                    res.setInOrder(res.getExternalId() > existingMaxPostExternalId);
+                    postResults.add(0, res);
+
+                    mgr.addPost(res);
+                }
+
+                Log.d(postUrl, "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
             });
         }
 
@@ -342,12 +324,14 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         }
 
         int currentPostId = UrlParser.getPostId(urlStr);
+        String hash = UrlParser.getMd5Digest(urlStr);
         Post post = new Post();
         post.setUrl(urlStr);
         post.setTitle(title);
         post.setContent(localizeImages(contents, website.getName(), currentPostId));
         post.setExternalId(currentPostId);
         post.setTimestamp(ts);
+        post.setHash(hash);
         post.setWebsiteId(website.getId());
 
         return post;

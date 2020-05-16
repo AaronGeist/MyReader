@@ -236,14 +236,13 @@ public class MainActivity extends AppCompatActivity
         List<Website> websites = dbManager.getAllWebsites();
 
         if (websites == null || websites.size() == 0) {
-            ToastUtil.toastLong("请先配置至少一个订阅网站");
+            ToastUtil.toastLong("请先订阅一个网站");
             return;
         }
 
         Collection<Long> websiteIds = new ArrayList<>();
-        for (Website website : websites) {
-            websiteIds.add(website.getId());
-        }
+        websites.forEach(w-> websiteIds.add(w.getId()));
+
         startPostId = dbManager.getMaxPostIdByWebsite(websiteIds);
 
         postList.addAll(dbManager.getPosts(currentDbPageNum, startPostId, websiteIds));

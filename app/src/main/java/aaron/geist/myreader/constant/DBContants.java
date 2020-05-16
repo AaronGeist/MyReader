@@ -28,5 +28,5 @@ public class DBContants {
     public static final String POST_COLUMN_STARED = "stared";
     public static final String POST_COLUMN_READ = "read";
     public static final String POST_COLUMN_IN_ORDER = "inOrder";
-
+    public static final String POST_COLUMN_HASH = "hash";
 }

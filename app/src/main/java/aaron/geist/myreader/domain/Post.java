@@ -22,6 +22,7 @@ public class Post implements Serializable, Comparable {
     private boolean mark;
     private boolean read;
     private boolean inOrder;
+    private String hash;
 
     public long getId() {
         return id;
@@ -101,6 +102,14 @@ public class Post implements Serializable, Comparable {
 
     public void setInOrder(boolean inOrder) {
         this.inOrder = inOrder;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
     }
 
     /**
