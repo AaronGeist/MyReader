@@ -1,5 +1,9 @@
 package aaron.geist.myreader.utils;
 
+import org.jsoup.helper.StringUtil;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,6 +19,21 @@ public class UrlParser {
 
         if (m.matches()) {
             result = Integer.valueOf(m.group(1));
+        }
+
+        return result;
+    }
+
+    public static String getMd5Digest(String url) {
+        String result = "";
+        if (!StringUtil.isBlank(url)) {
+            try {
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                md.update(url.getBytes());
+                result = new String(md.digest());
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
         }
 
         return result;

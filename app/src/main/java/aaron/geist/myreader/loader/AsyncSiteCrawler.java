@@ -44,6 +44,7 @@ import aaron.geist.myreader.utils.UrlParser;
 public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean> {
 
     private static final int MAX_POST_NUM_TO_LOAD = 50;
+    private static final int MIN_POST_NUM_TO_LOAD = 10;
 
     private DBManager mgr;
     private Website website = null;
@@ -109,6 +110,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
         Log.d("", "finish crawling site " + website.getName());
     }
+
 
     private void crawlCertainPage(final long existingMaxPostExternalId, final List<Post> postResults) {
         Log.d("", "crawling page " + website.getHomePage());
@@ -284,7 +286,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
                         mgr.addPost(res);
                     }
 
-                    Log.d("", "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
+                    Log.d(postUrl, "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
                 }
             });
         }
@@ -307,7 +309,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         Document document = null;
         URL url = null;
         try {
-            urlStr = urlStr.replaceAll("\\/\\/", "\\/");
+//            urlStr = urlStr.replaceAll("\\/\\/", "\\/");
             url = new URL(urlStr);
         } catch (MalformedURLException e) {
             e.printStackTrace();

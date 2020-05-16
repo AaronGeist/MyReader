@@ -337,7 +337,7 @@ public class MainActivity extends AppCompatActivity
             request.setWebsite(website);
             request.setReverse(false);
             // TODO make it a setting
-            request.setTargetNum(20);
+            request.setTargetNum(10);
 
             AsyncSiteCrawler crawler = new AsyncSiteCrawler();
             crawler.setCallback(this);

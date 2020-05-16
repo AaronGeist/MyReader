@@ -11,8 +11,7 @@ public enum SiteConfig {
     cnbeta("cnBeta", "default", "https://m.cnbeta.com/", "list/", "ul.info_list div.txt_area > a", "#artibody", "latest_%d.htm", "time.time"),
     luobo("萝卜", "default", "https://bh.sb/", "", "article h2 a", "article", "page/%d/", "ul.article-meta > li:nth-of-type(1)"),
     ifanr("爱范儿", "api", "https://sso.ifanr.com/api/v5/wp/web-feed/?published_at__lte=2999-01-01%2013:45:26&limit=50&offset=0", "", "", "article", "", "#ArticleContentMeta a > p")
-//    jobbole("伯乐", "http://blog.jobbole.com/", "all-posts", "div.post > div.post-meta > p > a.meta-title", "div.entry", "navigation", "p.entry-meta-hide-on-mobile"),
-//    infoq("infoQ", "http://www.infoq.com/", "cn/articles", "#content div.news_type2 > h2 > a", "div.text_info_article", "", ""), //
+    //infoq("infoQ", "default", "http://www.infoq.cn/", "topic/architecture", "div.article-list a.com-article-title", "div.article-content", "", ""), //
     ; //
 
     private String type;
