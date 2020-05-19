@@ -16,6 +16,7 @@ public class DBContants {
     public static final String WEBSITE_COLUMN_NAVIGATION_URL = "navigationUrl";
     public static final String WEBSITE_COLUMN_SELECT_INNER_POST = "innerPostSelect";
     public static final String WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP = "innerTimestampSelect";
+    public static final String WEBSITE_COLUMN_PAGE_NUM = "pageNum";
 
 
     public static final String POST_TABLE_NAME = "post";

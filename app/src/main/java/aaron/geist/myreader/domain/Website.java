@@ -39,6 +39,8 @@ public class Website {
 
     private String innerTimestampSelect = null;
 
+    private Integer pageNum = 1;
+
     public long getId() {
         return id;
     }
@@ -101,5 +103,13 @@ public class Website {
 
     public void setInnerTimestampSelect(String innerTimestampSelect) {
         this.innerTimestampSelect = innerTimestampSelect;
+    }
+
+    public Integer getPageNum() {
+        return pageNum;
+    }
+
+    public void setPageNum(Integer pageNum) {
+        this.pageNum = pageNum;
     }
 }

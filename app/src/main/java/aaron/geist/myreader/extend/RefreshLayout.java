@@ -180,7 +180,7 @@ public class RefreshLayout extends SwipeRefreshLayout implements AbsListView.OnS
 
     private boolean isOverScroll() {
         Log.d("", "mLastY=" + mLastY + ", mStartPosition=" + mStartPosition);
-        boolean res = (mStartPosition - mLastY) >= 800;
+        boolean res = (mStartPosition - mLastY) >= 400;
         return res;
     }
 

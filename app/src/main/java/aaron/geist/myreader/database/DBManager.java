@@ -64,6 +64,8 @@ public class DBManager {
             cv.put(DBContants.WEBSITE_COLUMN_NAVIGATION_URL, website.getNavigationUrl());
             cv.put(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST, website.getInnerPostSelect());
             cv.put(DBContants.WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP, website.getInnerTimestampSelect());
+            cv.put(DBContants.WEBSITE_COLUMN_PAGE_NUM, website.getPageNum());
+
 
             if (c.moveToNext()) {
                 siteId = c.getInt(c.getColumnIndex(DBContants.COLUMN_ID));
@@ -108,6 +110,8 @@ public class DBManager {
             website.setNavigationUrl(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAVIGATION_URL)));
             website.setInnerPostSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST)));
             website.setInnerTimestampSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP)));
+            website.setPageNum(c.getInt(c.getColumnIndex(DBContants.WEBSITE_COLUMN_PAGE_NUM)));
+
             websites.add(website);
         }
         c.close();
@@ -126,9 +130,35 @@ public class DBManager {
             website.setNavigationUrl(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_NAVIGATION_URL)));
             website.setInnerPostSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_POST)));
             website.setInnerTimestampSelect(c.getString(c.getColumnIndex(DBContants.WEBSITE_COLUMN_SELECT_INNER_TIMESTAMP)));
+            website.setPageNum(c.getInt(c.getColumnIndex(DBContants.WEBSITE_COLUMN_PAGE_NUM)));
         }
         c.close();
         return website;
+    }
+
+    public void updateWebsitePageNo(long websiteId, int pageNum) {
+        db.beginTransaction();
+        Cursor c = null;
+        try {
+            // check if exists
+            c = db.rawQuery("SELECT * FROM " + DBContants.WEBSITE_TABLE_NAME + " WHERE " +
+                    DBContants.COLUMN_ID + " = ?", new String[]{String.valueOf(websiteId)});
+            ContentValues cv = new ContentValues();
+            cv.put(DBContants.WEBSITE_COLUMN_PAGE_NUM, pageNum);
+
+            if (c.moveToNext()) {
+                websiteId = c.getInt(c.getColumnIndex(DBContants.COLUMN_ID));
+                String[] args = {String.valueOf(websiteId)};
+                db.update(DBContants.WEBSITE_TABLE_NAME, cv, DBContants.COLUMN_ID + "=?", args);
+                Log.d("", "update post successful");
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+            db.endTransaction();
+        }
     }
 
     public long addPost(Post post) {
@@ -228,7 +258,7 @@ public class DBManager {
         return posts;
     }
 
-    public List<Post> getPosts(int pageNum, int startPostExtId, Collection<Long> websiteIds) {
+    public List<Post> getPosts(int pageNum, Collection<Long> websiteIds) {
         List<Post> posts = new ArrayList<>();
 
         StringBuilder sb = new StringBuilder();
@@ -242,8 +272,8 @@ public class DBManager {
         inSelection = inSelection.substring(0, inSelection.length() - 1);
         inSelection += ")";
 
-        Cursor c = db.query(DBContants.POST_TABLE_NAME, null, DBContants.POST_COLUMN_EXTERNAL_ID + "<=" + startPostExtId + " AND " +
-                        DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection, null, null, null,
+        Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
+                DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection, null, null, null,
                 DBContants.POST_COLUMN_TIMESTAMP + " DESC, " + DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
                 (pageNum - 1) * DBContants.pageSize + "," + DBContants.pageSize);
         while (c.moveToNext()) {
@@ -302,7 +332,7 @@ public class DBManager {
     public boolean isPostExists(String hash) {
         boolean result = false;
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
-                DBContants.POST_COLUMN_HASH + "=" + hash, null, null, null, null);
+                DBContants.POST_COLUMN_HASH + "=\"" + hash + "\"", null, null, null, null);
         while (c.moveToNext()) {
             result = true;
         }

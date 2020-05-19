@@ -236,16 +236,14 @@ public class MainActivity extends AppCompatActivity
         List<Website> websites = dbManager.getAllWebsites();
 
         if (websites == null || websites.size() == 0) {
-            ToastUtil.toastLong("请先订阅一个网站");
+            ToastUtil.toastShort("请先订阅一个网站");
             return;
         }
 
         Collection<Long> websiteIds = new ArrayList<>();
-        websites.forEach(w-> websiteIds.add(w.getId()));
+        websites.forEach(w -> websiteIds.add(w.getId()));
 
-        startPostId = dbManager.getMaxPostIdByWebsite(websiteIds);
-
-        postList.addAll(dbManager.getPosts(currentDbPageNum, startPostId, websiteIds));
+        postList.addAll(dbManager.getPosts(currentDbPageNum, websiteIds));
 
         // sort with timestamp, then website, then externalId
         Collections.sort(postList);
@@ -303,11 +301,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onTaskCompleted(Boolean crawlSuccess, List<Post> posts, boolean isReverse) {
+    public void onTaskCompleted(Boolean crawlSuccess, List<Post> posts, boolean isReverse, String websiteName) {
         postRefresh.setRefreshing(false);
         postRefresh.setLoading(false);
         if (crawlSuccess) {
-            ToastUtil.toastLong("加载完毕，新增 " + posts.size() + " 条");
+            ToastUtil.toastShort(websiteName + "加载完毕，新增 " + posts.size() + " 条");
 
             if (isReverse) {
                 postList.addAll(posts);
@@ -326,12 +324,21 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onRefresh() {
+        Map<String, Website> websites = SubscribeManager.getInstance().getAll();
+
+        if (websites.isEmpty()) {
+            postRefresh.setRefreshing(false);
+            postRefresh.setLoading(false);
+            ToastUtil.toastShort("请先订阅一个网站");
+
+            return;
+        }
+
         ToastUtil.toastShort("看看有什么新货");
 
         // define specified executor to enable parallel for AsyncTask
         Executor executor = Executors.newFixedThreadPool(10);
-        List<Website> websites = dbManager.getAllWebsites();
-        for (Website website : websites) {
+        for (Website website : websites.values()) {
             CrawlerRequest request = new CrawlerRequest();
             request.setWebsite(website);
             request.setReverse(false);
@@ -347,13 +354,39 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onLoad() {
         Map<String, Website> websites = SubscribeManager.getInstance().getAll();
+
+        if (websites.isEmpty()) {
+            postRefresh.setRefreshing(false);
+            postRefresh.setLoading(false);
+            ToastUtil.toastShort("请先订阅一个网站");
+
+            return;
+        }
+
         Collection<Long> websiteIds = new ArrayList<>();
         for (Website website : websites.values()) {
             websiteIds.add(website.getId());
         }
 
         // load posts from local DB
-        List<Post> posts = dbManager.getPosts(++currentDbPageNum, startPostId, websiteIds);
-        this.onTaskCompleted(true, posts, true);
+        List<Post> posts = dbManager.getPosts(++currentDbPageNum, websiteIds);
+
+        if (posts.isEmpty()) {
+            ToastUtil.toastShort("看看有什么旧货");
+            // define specified executor to enable parallel for AsyncTask
+            Executor executor = Executors.newFixedThreadPool(10);
+            for (Website website : websites.values()) {
+                CrawlerRequest request = new CrawlerRequest();
+                request.setWebsite(website);
+                request.setReverse(true);
+                request.setTargetNum(10);
+
+                AsyncSiteCrawler crawler = new AsyncSiteCrawler();
+                crawler.setCallback(this);
+                crawler.executeOnExecutor(executor, request);
+            }
+        } else {
+            this.onTaskCompleted(true, posts, true, "");
+        }
     }
 }

@@ -9,6 +9,6 @@ import aaron.geist.myreader.domain.Post;
  */
 public interface AsyncCallback {
 
-    public void onTaskCompleted(Boolean crawlSuccess, List<Post> newPosts, boolean isReverse);
+    void onTaskCompleted(Boolean crawlSuccess, List<Post> newPosts, boolean isReverse, String websiteName);
 
 }

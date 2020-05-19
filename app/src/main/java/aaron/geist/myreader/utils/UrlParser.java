@@ -1,7 +1,10 @@
 package aaron.geist.myreader.utils;
 
+import com.google.common.base.Charsets;
+
 import org.jsoup.helper.StringUtil;
 
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.regex.Matcher;
@@ -25,17 +28,20 @@ public class UrlParser {
     }
 
     public static String getMd5Digest(String url) {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         if (!StringUtil.isBlank(url)) {
             try {
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                md.update(url.getBytes());
-                result = new String(md.digest());
+                md.update(url.getBytes(Charsets.UTF_8));
+                byte[] s = md.digest();
+                for (byte b : s) {
+                    result.append(Integer.toHexString((0x000000FF & b) | 0xFFFFFF00).substring(6));
+                }
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
         }
 
-        return result;
+        return result.toString();
     }
 }

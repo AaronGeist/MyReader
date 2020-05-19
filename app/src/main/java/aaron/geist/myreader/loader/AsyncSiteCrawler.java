@@ -4,6 +4,10 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -21,11 +25,12 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import aaron.geist.myreader.constant.HtmlConstants;
 import aaron.geist.myreader.constant.LoaderConstants;
@@ -56,6 +61,8 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     private final List<String> imageSrcAttr = Arrays.asList("src", "data-original");
 
+    private Cache<String, String> cache = CacheBuilder.newBuilder().maximumSize(1000).build();
+
     /**
      * signal to stop crawling when:
      * <ul>
@@ -83,38 +90,45 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
 
     @Override
     protected void onPostExecute(Boolean crawlSuccess) {
-        callback.onTaskCompleted(crawlSuccess, crawledPosts, isReverse);
+        callback.onTaskCompleted(crawlSuccess, crawledPosts, isReverse, this.website.getName());
     }
 
     private void crawl() {
         Log.d("", "start crawling site " + website.getName());
 
-        int pageNum = 1;
-        long existingMaxPostExternalId = mgr.getMaxPostIdByWebsite(Collections.singletonList(website.getId()));
+        int pageNum = this.isReverse ? this.website.getPageNum() : 1;
 
         switch (website.getType().toLowerCase()) {
             case "default":
                 while (!stopCrawl) {
-                    crawlSinglePage(pageNum, existingMaxPostExternalId, crawledPosts);
-                    pageNum += 1;
+                    crawledPosts.addAll(crawlSinglePage(pageNum));
+                    pageNum++;
+
+                    if (crawledPosts.size() > targetNum) {
+                        if (isReverse) {
+                            // next time, we start from next page number
+                            mgr.updateWebsitePageNo(website.getId(), pageNum);
+                        }
+                        break;
+                    }
                 }
                 break;
             case "api":
-                crawlCertainPage(existingMaxPostExternalId, crawledPosts);
+                crawledPosts.addAll(crawlCertainPage());
                 break;
             default:
                 Log.e("", "Not supported website type: " + website.getType());
                 break;
         }
 
-
         Log.d("", "finish crawling site " + website.getName());
     }
 
 
-    private void crawlCertainPage(final long existingMaxPostExternalId, final List<Post> postResults) {
+    private List<Post> crawlCertainPage() {
         Log.d("", "crawling page " + website.getHomePage());
 
+        List<Post> result = Lists.newArrayList();
         final List<String> postUrls = new ArrayList<>();
         try {
             URL url = new URL(website.getHomePage());
@@ -125,13 +139,13 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             if (conn.getResponseCode() == 200) {
                 InputStream inStream = conn.getInputStream();
 
-                ByteArrayOutputStream result = new ByteArrayOutputStream();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int length;
                 while ((length = inStream.read(buffer)) != -1) {
-                    result.write(buffer, 0, length);
+                    baos.write(buffer, 0, length);
                 }
-                String str = result.toString(StandardCharsets.UTF_8.name());
+                String str = baos.toString(StandardCharsets.UTF_8.name());
                 JSONObject jsonObject = new JSONObject(str);
                 JSONArray jsonArray = (JSONArray) jsonObject.get("objects");
 
@@ -142,62 +156,21 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
             } else {
                 Log.d("", "Fail to crawl: " + url.getPath());
                 stopCrawl = true;
-                return;
+                return result;
             }
         } catch (Exception e) {
             Log.d("", "IOException: " + e.getMessage());
         }
 
-
-        Log.d("", "find post number=" + postUrls.size());
-
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-
-        for (int i = 0, size = postUrls.size(); i < size && !stopCrawl; i++) {
-
-            final String postUrl = postUrls.get(i);
-            executorService.submit(() -> {
-                long start = System.currentTimeMillis();
-
-                // post already exists
-                String hash = UrlParser.getMd5Digest(postUrl);
-                if (mgr.isPostExists(hash)) {
-                    stopCrawl = true;
-                    return;
-                }
-
-                Post res = crawlSinglePost(postUrl);
-                if (res != null) {
-                    res.setInOrder(res.getExternalId() > existingMaxPostExternalId);
-                    postResults.add(0, res);
-
-                    mgr.addPost(res);
-                }
-
-                Log.d("", "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
-            });
-        }
-
-        try {
-            executorService.awaitTermination(30, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Log.d("", e.getMessage());
-        }
-
-        if (postResults.size() >= targetNum) {
-            stopCrawl = true;
-        }
-
         crawlSuccess = true;
+
+        return doCrawl(postUrls);
     }
 
-    private void crawlSinglePage(int pageNum, final long existingMaxPostExternalId, final List<Post> postResults) {
-        if (pageNum <= 0) {
-            stopCrawl = true;
-            return;
-        }
-
+    private List<Post> crawlSinglePage(int pageNum) {
         Log.d("", "crawling page " + String.format(website.getNavigationUrl(), pageNum));
+
+        List<Post> result = Lists.newArrayList();
         Document document = null;
         URL url = null;
         try {
@@ -216,7 +189,7 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         if (document == null) {
             Log.d("", "Fail to crawl: " + url.getPath());
             stopCrawl = true;
-            return;
+            return result;
         }
 
         Element body = document.body();
@@ -226,64 +199,81 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         // no longer valid pageNum, being zero or exceeding the maximum
         if (posts.size() == 0) {
             stopCrawl = true;
-            return;
+            return result;
         }
 
-        final List<Element> postList = posts.subList(0, posts.size());
-        // if we try to pull latest posts, we find max postId in DB is n,
-        // then we trying to find n-1, n-2...n-m, in which m is the max post num to load
-        // so the list is reversed here.
-        if (!isReverse) {
-            Collections.reverse(postList);
-        }
 
-        Log.d("", "find post number=" + posts.size());
+        List<Element> postList = posts.subList(0, posts.size());
+        List<String> postUrls = Lists.newArrayList();
+        postList.forEach(post -> {
+            String href = post.attr(HtmlConstants.ATTR_HREF);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
+            // some link contains full url path, so we don't need to do anything.
+            // Others is only part, so need to add root url.
+            if (!href.startsWith("http")) {
+                href = website.getHomePage() + href;
+            }
 
-        for (int i = 0, size = postList.size(); i < size && !stopCrawl; i++) {
+            // replace // with /
+            href = href.replaceAll("//", "/");
 
-            final Element post = postList.get(i);
-            executorService.submit(() -> {
-                long start = System.currentTimeMillis();
-                String postUrl = post.attr(HtmlConstants.ATTR_HREF);
-
-                // some link contains full url path, so we don't need to do anything.
-                // Others is only part, so need to add root url.
-                if (!postUrl.startsWith("http")) {
-                    postUrl = website.getHomePage() + postUrl;
-                }
-
-                // post already exists
-                String hash = UrlParser.getMd5Digest(postUrl);
-                if (mgr.isPostExists(hash)) {
-                    stopCrawl = true;
-                    return;
-                }
-
-                Post res = crawlSinglePost(postUrl);
-                if (res != null) {
-                    res.setInOrder(res.getExternalId() > existingMaxPostExternalId);
-                    postResults.add(0, res);
-
-                    mgr.addPost(res);
-                }
-
-                Log.d(postUrl, "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
-            });
-        }
-
-        try {
-            executorService.awaitTermination(30, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Log.d("", e.getMessage());
-        }
-
-        if (postResults.size() >= targetNum) {
-            stopCrawl = true;
-        }
+            postUrls.add(href);
+        });
 
         crawlSuccess = true;
+
+        return doCrawl(postUrls);
+    }
+
+    private List<Post> doCrawl(List<String> postUrls) {
+        Log.d("", "going to crawl " + postUrls.size() + " posts.");
+
+        List<Post> result = Lists.newArrayList();
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+        List<Future<Post>> futureList = Lists.newArrayList();
+        for (int i = 0, size = postUrls.size(); i < size; i++) {
+            final String postUrl = postUrls.get(i);
+
+
+            String hash = UrlParser.getMd5Digest(postUrl);
+            if (cache.getIfPresent(hash) != null || mgr.isPostExists(hash)) {
+                if (!isReverse) {
+                    // do not stop crawling until existing post is found
+                    stopCrawl = true;
+                    break;
+                } else {
+                    continue;
+                }
+            }
+
+            futureList.add(executorService.submit(() -> {
+                long start = System.currentTimeMillis();
+
+                Post post = crawlSinglePost(postUrl);
+                cache.put(hash, hash);
+
+                Log.d(postUrl, "Crawl single post cost: " + (System.currentTimeMillis() - start) + "ms");
+
+                return post;
+            }));
+        }
+
+        futureList.forEach(future -> {
+            try {
+                Post post = future.get(10, TimeUnit.SECONDS);
+                if (post != null) {
+                    result.add(post);
+                    mgr.addPost(post);
+                }
+            } catch (TimeoutException e) {
+                Log.e("TimeoutException", "crawling post");
+            } catch (Exception e) {
+                Log.e("Exception", "crawling post");
+            }
+        });
+
+        return result;
     }
 
     private Post crawlSinglePost(String urlStr) {
@@ -324,14 +314,13 @@ public class AsyncSiteCrawler extends AsyncTask<CrawlerRequest, Integer, Boolean
         }
 
         int currentPostId = UrlParser.getPostId(urlStr);
-        String hash = UrlParser.getMd5Digest(urlStr);
         Post post = new Post();
         post.setUrl(urlStr);
         post.setTitle(title);
         post.setContent(localizeImages(contents, website.getName(), currentPostId));
         post.setExternalId(currentPostId);
         post.setTimestamp(ts);
-        post.setHash(hash);
+        post.setHash(UrlParser.getMd5Digest(urlStr));
         post.setWebsiteId(website.getId());
 
         return post;

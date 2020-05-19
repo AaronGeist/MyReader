@@ -92,7 +92,7 @@ public class PostTitleListActivity extends Activity implements AsyncCallback, Re
     }
 
     @Override
-    public void onTaskCompleted(Boolean crawlSuccess, List<Post> posts, boolean isReverse) {
+    public void onTaskCompleted(Boolean crawlSuccess, List<Post> posts, boolean isReverse, String websiteName) {
         postRefresh.setRefreshing(false);
         adapterList.clear();
 

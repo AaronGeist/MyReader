@@ -51,11 +51,11 @@ public class SubscribeItemAdapter extends RecyclerView.Adapter<SubscribeItemAdap
             @Override
             public void onClick(View v) {
                 if (subscribeManager.hasSubscribed(siteConfig.getName())) {
-                    ToastUtil.toastLong("取消订阅：" + siteConfig.getName());
+                    ToastUtil.toastShort("取消订阅：" + siteConfig.getName());
                     subscribeManager.unsubscribe(siteConfig);
                     ((Button) v).setText(R.string.website_sub);
                 } else {
-                    ToastUtil.toastLong("订阅：" + siteConfig.getName());
+                    ToastUtil.toastShort("订阅：" + siteConfig.getName());
                     subscribeManager.subscribe(siteConfig);
                     ((Button) v).setText(R.string.website_unsub);
                 }
