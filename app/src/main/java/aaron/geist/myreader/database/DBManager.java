@@ -210,25 +210,13 @@ public class DBManager {
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
                 DBContants.POST_COLUMN_WEBSITE_ID + "=" + siteId, null, null, null, DBContants.POST_COLUMN_TIMESTAMP + ", " + DBContants.POST_COLUMN_EXTERNAL_ID + " DESC");
         while (c.moveToNext()) {
-            Post post = new Post();
-            post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));
-            post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
-            post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
-            post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
-            post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
-            post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
-            post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
-            post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
-            post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
-            post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
-            post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
-            posts.add(post);
+            posts.add(convertPost(c));
         }
         c.close();
         return posts;
     }
 
-    public List<Post> getLatestPosts(Collection<Long> websiteIds, int offset, int limit) {
+    public List<Post> getPosts(int pageNum, Collection<Long> websiteIds) {
         List<Post> posts = new ArrayList<>();
 
         String inSelection = "(" +
@@ -238,94 +226,47 @@ public class DBManager {
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
                 DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection, null, null, null,
                 DBContants.POST_COLUMN_TIMESTAMP + " DESC, " + DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
-                offset * limit + "," + limit);
+                (pageNum - 1) * DBContants.pageSize + "," + DBContants.pageSize);
         while (c.moveToNext()) {
-            Post post = new Post();
-            post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));
-            post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
-            post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
-            post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
-            post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
-            post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
-            post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
-            post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
-            post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
-            post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
-            post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
-            posts.add(post);
+
+            posts.add(convertPost(c));
         }
         c.close();
         return posts;
     }
 
-    public List<Post> getPosts(int pageNum, Collection<Long> websiteIds) {
+    public List<Post> getUnreadPosts(int pageNum, Collection<Long> websiteIds) {
         List<Post> posts = new ArrayList<>();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("(");
-        String inSelection;
-        for (Long websiteId : websiteIds) {
-            sb.append(websiteId);
-            sb.append(",");
-        }
-        inSelection = sb.toString();
-        inSelection = inSelection.substring(0, inSelection.length() - 1);
-        inSelection += ")";
+        String inSelection = "(" +
+                Joiner.on(",").join(websiteIds) +
+                ")";
 
         Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
-                DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection, null, null, null,
+                DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection + " AND " + DBContants.POST_COLUMN_READ + " = 0", null, null, null,
                 DBContants.POST_COLUMN_TIMESTAMP + " DESC, " + DBContants.POST_COLUMN_EXTERNAL_ID + " DESC",
                 (pageNum - 1) * DBContants.pageSize + "," + DBContants.pageSize);
         while (c.moveToNext()) {
-            Post post = new Post();
-            post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));
-            post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
-            post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
-            post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
-            post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
-            post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
-            post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
-            post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
-            post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
-            post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
-            post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
-            posts.add(post);
+            posts.add(convertPost(c));
         }
         c.close();
         return posts;
     }
 
-    public Post getSinglePost(long postId) {
-        Post post = null;
-        Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
-                DBContants.COLUMN_ID + "=" + postId, null, null, null, null);
-        while (c.moveToNext()) {
-            post = new Post();
-            post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));
-            post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
-            post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
-            post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
-            post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
-            post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
-            post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
-            post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
-            post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
-            post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
-            post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
-        }
-        c.close();
-        return post;
-    }
+    private Post convertPost(Cursor c) {
+        Post post = new Post();
+        post.setId(c.getLong(c.getColumnIndex(DBContants.COLUMN_ID)));
+        post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
+        post.setContent(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_CONTENT)));
+        post.setExternalId(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_EXTERNAL_ID)));
+        post.setTimestamp(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_TIMESTAMP)));
+        post.setUrl(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_URL)));
+        post.setWebsiteId(c.getLong(c.getColumnIndex(DBContants.POST_COLUMN_WEBSITE_ID)));
+        post.setMarked(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_STARED)) != 0);
+        post.setRead(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_READ)) != 0);
+        post.setInOrder(c.getInt(c.getColumnIndex(DBContants.POST_COLUMN_IN_ORDER)) != 0);
+        post.setHash(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_HASH)));
 
-    public Post getPostByExternalId(long externalId) {
-        Post post = null;
-        Cursor c = db.query(DBContants.POST_TABLE_NAME, null,
-                DBContants.POST_COLUMN_EXTERNAL_ID + "=" + externalId, null, null, null, null);
-        while (c.moveToNext()) {
-            post = new Post();
-            post.setTitle(c.getString(c.getColumnIndex(DBContants.POST_COLUMN_TITLE)));
-        }
-        c.close();
         return post;
     }
 
@@ -337,57 +278,6 @@ public class DBManager {
             result = true;
         }
         c.close();
-        return result;
-    }
-
-//    public List<String> getAllPostTitleByWebsite(long siteId) {
-//        List<String> titleList = new ArrayList<String>();
-//        Cursor c = db.query(DBContants.POST_TABLE_NAME, new String[] {DBContants.POST_COLUMN_TITLE},
-//                DBContants.POST_COLUMN_WEBSITE_ID + "=" + siteId, null, null, null, null);
-//        while (c.moveToNext()) {
-//            titleList.add(c.getString(0));
-//        }
-//        c.close();
-//        return titleList;
-//    }
-
-    public int getMaxPostIdByWebsite(Collection<Long> websiteIds) {
-        int result = -1;
-
-        String inSelection = "(";
-        for (Long websiteId : websiteIds) {
-            inSelection += websiteId + ",";
-        }
-        inSelection = inSelection.substring(0, inSelection.length() - 1);
-        inSelection += ")";
-
-        Cursor c = db.query(DBContants.POST_TABLE_NAME,
-                new String[]{"MAX(" + DBContants.POST_COLUMN_EXTERNAL_ID + ")"},
-                DBContants.POST_COLUMN_WEBSITE_ID + " in " + inSelection + " AND "
-                        + DBContants.POST_COLUMN_IN_ORDER + "=1", null, null, null, null);
-        try {
-            c.moveToNext();
-            result = c.getInt(0);
-        } finally {
-            c.close();
-        }
-        Log.d("", "get max post id = " + result);
-        return result;
-    }
-
-    public int getMinPostIdByWebsite(long websiteId) {
-        int result = -1;
-        Cursor c = db.query(DBContants.POST_TABLE_NAME,
-                new String[]{"MIN(" + DBContants.POST_COLUMN_EXTERNAL_ID + ")"},
-                DBContants.POST_COLUMN_WEBSITE_ID + "=" + websiteId + " AND "
-                        + DBContants.POST_COLUMN_IN_ORDER + "=1", null, null, null, null);
-        try {
-            c.moveToNext();
-            result = c.getInt(0);
-        } finally {
-            c.close();
-        }
-        Log.d("", "get min post id = " + result);
         return result;
     }
 

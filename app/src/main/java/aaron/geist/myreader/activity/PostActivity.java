@@ -36,13 +36,9 @@ public class PostActivity extends AppCompatActivity {
         setContentView(R.layout.post_main);
         postToolbar = findViewById(R.id.postToolbar);
         setSupportActionBar(postToolbar);
-        postToolbar.setNavigationIcon(R.drawable.close);
+        postToolbar.setNavigationIcon(R.mipmap.close);
 
-        postToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                finish();
-            }
-        });
+        postToolbar.setNavigationOnClickListener(view -> finish());
 
         markBtn = findViewById(R.id.markBtn);
         content = findViewById(R.id.singlePostContent);

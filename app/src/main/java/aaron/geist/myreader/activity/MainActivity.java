@@ -2,7 +2,6 @@ package aaron.geist.myreader.activity;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
@@ -68,7 +67,6 @@ public class MainActivity extends AppCompatActivity
 
     // local variables
     private List<Post> postList = new ArrayList<>();
-    private Integer startPostId = -1;
     private Integer currentDbPageNum = 1;
 
     @Override
@@ -124,13 +122,8 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show());
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -160,52 +153,41 @@ public class MainActivity extends AppCompatActivity
 
         postTitleListAdapter = new PostTitleListAdapter(this, postList);
         postTitleListView.setAdapter(postTitleListAdapter);
-        postTitleListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
-                Post selectedPost = (Post) postTitleListView.getItemAtPosition(pos);
+        postTitleListView.setOnItemClickListener((adapterView, view, pos, l) -> {
+            Post selectedPost = (Post) postTitleListView.getItemAtPosition(pos);
 
-                Intent intent = new Intent();
-                intent.putExtra(PostActivity.POST_DATA, selectedPost);
-                intent.setClass(view.getContext(), PostActivity.class);
-                startActivity(intent);
+            Intent intent = new Intent();
+            intent.putExtra(PostActivity.POST_DATA, selectedPost);
+            intent.setClass(view.getContext(), PostActivity.class);
+            startActivity(intent);
 
-                // update post as read
-                if (!selectedPost.isRead()) {
-                    selectedPost.setRead(true);
-                    postTitleListAdapter.notifyDataSetChanged();
+            // update post as read
+            if (!selectedPost.isRead()) {
+                selectedPost.setRead(true);
+                postTitleListAdapter.notifyDataSetChanged();
 
-                    dbManager.updatePostRead(selectedPost.getId(), true);
-                }
+                dbManager.updatePostRead(selectedPost.getId(), true);
             }
         });
 
-        postTitleListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int pos, long l) {
-                new AlertDialog.Builder(view.getContext()).setTitle("DELETE CURRENT POST?")
-                        .setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                Post selectPost = (Post) postTitleListView.getItemAtPosition(pos);
-                                postList.remove(selectPost);
-                                postTitleListAdapter.notifyDataSetChanged();
+        postTitleListView.setOnItemLongClickListener((adapterView, view, pos, l) -> {
+            new AlertDialog.Builder(view.getContext()).setTitle("DELETE CURRENT POST?")
+                    .setPositiveButton("YES", (dialogInterface, i) -> {
+                        Post selectPost = (Post) postTitleListView.getItemAtPosition(pos);
+                        postList.remove(selectPost);
+                        postTitleListAdapter.notifyDataSetChanged();
 
-                                dbManager.removePost(selectPost);
-                            }
-                        })
-                        .setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                            }
-                        })
-                        .show();
+                        dbManager.removePost(selectPost);
+                    })
+                    .setNegativeButton("NO", (dialogInterface, i) -> {
+                    })
+                    .show();
 
-                return true;
-            }
+            return true;
         });
 
-        final GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() { //使用SimpleOnGestureListener可以只覆盖实现自己想要的手势
+        //使用SimpleOnGestureListener可以只覆盖实现自己想要的手势
+        final GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDoubleTap(MotionEvent e) { //DoubleTap手势的处理
                 postTitleListView.smoothScrollToPosition(0);
@@ -213,12 +195,8 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        toolbar.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) { //使用GestureDetector对Toolbar进行手势监听
-                return gestureDetector.onTouchEvent(event);
-            }
-        });
+        //使用GestureDetector对Toolbar进行手势监听
+        toolbar.setOnTouchListener((v, event) -> gestureDetector.onTouchEvent(event));
     }
 
     /**
@@ -243,7 +221,7 @@ public class MainActivity extends AppCompatActivity
         Collection<Long> websiteIds = new ArrayList<>();
         websites.forEach(w -> websiteIds.add(w.getId()));
 
-        postList.addAll(dbManager.getPosts(currentDbPageNum, websiteIds));
+        postList.addAll(dbManager.getUnreadPosts(currentDbPageNum, websiteIds));
 
         // sort with timestamp, then website, then externalId
         Collections.sort(postList);
@@ -369,7 +347,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         // load posts from local DB
-        List<Post> posts = dbManager.getPosts(++currentDbPageNum, websiteIds);
+        List<Post> posts = dbManager.getUnreadPosts(++currentDbPageNum, websiteIds);
 
         if (posts.isEmpty()) {
             ToastUtil.toastShort("看看有什么旧货");
