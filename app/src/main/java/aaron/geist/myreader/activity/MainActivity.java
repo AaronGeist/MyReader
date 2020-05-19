@@ -1,6 +1,7 @@
 package aaron.geist.myreader.activity;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -11,8 +12,10 @@ import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SubMenu;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
@@ -25,6 +28,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.database.DBManager;
@@ -44,7 +49,6 @@ import aaron.geist.myreader.extend.RefreshLayout;
 import aaron.geist.myreader.loader.AsyncCallback;
 import aaron.geist.myreader.loader.AsyncSiteCrawler;
 import aaron.geist.myreader.subscriber.SubscribeManager;
-import aaron.geist.myreader.utils.ToastUtil;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, AsyncCallback, RefreshLayout.OnRefreshListener, RefreshLayout.OnLoadListener {
@@ -65,7 +69,12 @@ public class MainActivity extends AppCompatActivity
 
     // local variables
     private List<Post> postList = new ArrayList<>();
+    private List<Post> postListCache = new ArrayList<>();
+    private long targetWebSiteId = ALL_WEBSITE;
     private Integer currentDbPageNum = 1;
+
+    // constants
+    private static final long ALL_WEBSITE = -1L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +123,7 @@ public class MainActivity extends AppCompatActivity
     /**
      * Initialize all components in activity.
      */
+    @SuppressLint("ClickableViewAccessibility")
     private void initResources() {
         setContentView(R.layout.activity_main);
         toolbar = findViewById(R.id.toolbar);
@@ -175,6 +185,7 @@ public class MainActivity extends AppCompatActivity
             new AlertDialog.Builder(view.getContext()).setTitle("DELETE CURRENT POST?")
                     .setPositiveButton("YES", (dialogInterface, i) -> {
                         Post selectPost = (Post) postTitleListView.getItemAtPosition(pos);
+                        postListCache.remove(selectPost);
                         postList.remove(selectPost);
                         postTitleListAdapter.notifyDataSetChanged();
 
@@ -211,21 +222,24 @@ public class MainActivity extends AppCompatActivity
     /**
      * Load all existing posts in DB
      */
+    @SuppressWarnings("unchecked")
     private void loadAllPosts() {
         List<Website> websites = dbManager.getAllWebsites();
 
         if (websites == null || websites.size() == 0) {
-            ToastUtil.toastShort("请先订阅一个网站");
+            toastShort("请先订阅一个网站");
             return;
         }
 
         Collection<Long> websiteIds = new ArrayList<>();
         websites.forEach(w -> websiteIds.add(w.getId()));
 
-        postList.addAll(dbManager.getPosts(currentDbPageNum, websiteIds));
+        postListCache.addAll(dbManager.getPosts(currentDbPageNum, websiteIds));
 
         // sort with timestamp, then website, then externalId
-        Collections.sort(postList);
+        Collections.sort(postListCache);
+
+        postList.addAll(postListCache);
     }
 
     @Override
@@ -242,6 +256,18 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+
+        SubMenu editMenu = menu.addSubMenu("过滤显示");
+
+        Map<String, Website> websites = SubscribeManager.getInstance().getAll();
+
+        //添加菜单项
+        for (Website website : websites.values()) {
+            editMenu.add(1, (int) website.getId(), 1, website.getName());
+        }
+
+        editMenu.add(1, (int) ALL_WEBSITE, 1, "全部");
+
         return true;
     }
 
@@ -255,6 +281,12 @@ public class MainActivity extends AppCompatActivity
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }
+
+        // 只显示单个网站内容，或显示所有内容
+        if (item.getGroupId() == 1) {
+            targetWebSiteId = item.getItemId();
+            updatePostList();
         }
 
         return super.onOptionsItemSelected(item);
@@ -284,40 +316,40 @@ public class MainActivity extends AppCompatActivity
         postRefresh.setRefreshing(false);
         postRefresh.setLoading(false);
         if (crawlSuccess) {
-            ToastUtil.toastShort(websiteName + "加载完毕，新增 " + posts.size() + " 条");
+            toastShort(websiteName + "加载完毕，新增 " + posts.size() + " 条");
 
             if (isReverse) {
-                postList.addAll(posts);
+                postListCache.addAll(posts);
             } else {
-                postList.addAll(0, posts);
+                postListCache.addAll(0, posts);
             }
 
             // re-order all posts
-            Collections.sort(postList);
+            Collections.sort(postListCache);
 
-            postTitleListAdapter.notifyDataSetChanged();
+            updatePostList();
         } else {
-            ToastUtil.toastLong("加载失败");
+            toastShort("加载失败");
         }
     }
 
     @Override
     public void onRefresh() {
-        Map<String, Website> websites = SubscribeManager.getInstance().getAll();
+        List<Website> targetWebsites = getTargetWebsites();
 
-        if (websites.isEmpty()) {
+        if (targetWebsites.isEmpty()) {
             postRefresh.setRefreshing(false);
             postRefresh.setLoading(false);
-            ToastUtil.toastShort("请先订阅一个网站");
+            toastShort("请先订阅一个网站");
 
             return;
         }
 
-        ToastUtil.toastShort("看看有什么新货");
+        toastShort("看看有什么新货");
 
         // define specified executor to enable parallel for AsyncTask
         Executor executor = Executors.newFixedThreadPool(10);
-        for (Website website : websites.values()) {
+        for (Website website : targetWebsites) {
             CrawlerRequest request = new CrawlerRequest();
             request.setWebsite(website);
             request.setReverse(false);
@@ -332,18 +364,18 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLoad() {
-        Map<String, Website> websites = SubscribeManager.getInstance().getAll();
+        List<Website> websites = getTargetWebsites();
 
         if (websites.isEmpty()) {
             postRefresh.setRefreshing(false);
             postRefresh.setLoading(false);
-            ToastUtil.toastShort("请先订阅一个网站");
+            toastShort("请先订阅一个网站");
 
             return;
         }
 
         Collection<Long> websiteIds = new ArrayList<>();
-        for (Website website : websites.values()) {
+        for (Website website : websites) {
             websiteIds.add(website.getId());
         }
 
@@ -351,10 +383,10 @@ public class MainActivity extends AppCompatActivity
         List<Post> posts = dbManager.getPosts(++currentDbPageNum, websiteIds);
 
         if (posts.isEmpty()) {
-            ToastUtil.toastShort("看看有什么旧货");
+            toastShort("看看有什么旧货");
             // define specified executor to enable parallel for AsyncTask
             Executor executor = Executors.newFixedThreadPool(10);
-            for (Website website : websites.values()) {
+            for (Website website : websites) {
                 CrawlerRequest request = new CrawlerRequest();
                 request.setWebsite(website);
                 request.setReverse(true);
@@ -367,5 +399,33 @@ public class MainActivity extends AppCompatActivity
         } else {
             this.onTaskCompleted(true, posts, true, "");
         }
+    }
+
+    private void updatePostList() {
+        if (targetWebSiteId != ALL_WEBSITE) {
+            postList.clear();
+            postList.addAll(postListCache.stream().filter((post) -> post.getWebsiteId() == targetWebSiteId).collect(Collectors.toList()));
+        } else if (postList.size() != postListCache.size()) {
+            postList.clear();
+            postList.addAll(postListCache);
+        }
+
+        postTitleListAdapter.notifyDataSetChanged();
+    }
+
+    private List<Website> getTargetWebsites() {
+        List<Website> websites = Lists.newArrayList();
+        if (targetWebSiteId == ALL_WEBSITE) {
+            websites.addAll(SubscribeManager.getInstance().getAll().values());
+        } else {
+            Website website = DBManager.getInstance().getWebsiteById(targetWebSiteId);
+            websites.add(website);
+        }
+
+        return websites;
+    }
+
+    private void toastShort(String msg) {
+        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
     }
 }

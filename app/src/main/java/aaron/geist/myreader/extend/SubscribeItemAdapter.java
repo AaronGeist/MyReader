@@ -15,7 +15,6 @@ import java.util.List;
 import aaron.geist.myreader.R;
 import aaron.geist.myreader.constant.SiteConfig;
 import aaron.geist.myreader.subscriber.SubscribeManager;
-import aaron.geist.myreader.utils.ToastUtil;
 
 public class SubscribeItemAdapter extends RecyclerView.Adapter<SubscribeItemAdapter.ViewHolder> {
 
@@ -47,18 +46,13 @@ public class SubscribeItemAdapter extends RecyclerView.Adapter<SubscribeItemAdap
             holder.btn.setText(R.string.website_unsub);
         }
 
-        holder.btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (subscribeManager.hasSubscribed(siteConfig.getName())) {
-                    ToastUtil.toastShort("取消订阅：" + siteConfig.getName());
-                    subscribeManager.unsubscribe(siteConfig);
-                    ((Button) v).setText(R.string.website_sub);
-                } else {
-                    ToastUtil.toastShort("订阅：" + siteConfig.getName());
-                    subscribeManager.subscribe(siteConfig);
-                    ((Button) v).setText(R.string.website_unsub);
-                }
+        holder.btn.setOnClickListener(v -> {
+            if (subscribeManager.hasSubscribed(siteConfig.getName())) {
+                subscribeManager.unsubscribe(siteConfig);
+                ((Button) v).setText(R.string.website_sub);
+            } else {
+                subscribeManager.subscribe(siteConfig);
+                ((Button) v).setText(R.string.website_unsub);
             }
         });
     }

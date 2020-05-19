@@ -1,5 +1,6 @@
 package aaron.geist.myreader.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.GestureDetector;
@@ -36,7 +37,7 @@ public class PostActivity extends AppCompatActivity {
         setContentView(R.layout.post_main);
         postToolbar = findViewById(R.id.postToolbar);
         setSupportActionBar(postToolbar);
-        postToolbar.setNavigationIcon(R.mipmap.close);
+        postToolbar.setNavigationIcon(R.drawable.close);
 
         postToolbar.setNavigationOnClickListener(view -> finish());
 
@@ -63,30 +64,27 @@ public class PostActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void setBtnListener() {
-        markBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                post.setMarked(!post.isMarked());
-                DBManager.getInstance().updatePostStar(post.getId(), post.isMarked());
-                markBtn.setBackground(post.isMarked() ? getDrawable(R.drawable.mark_yes) : getDrawable(R.drawable.mark_no));
-            }
+        markBtn.setOnClickListener(view -> {
+            post.setMarked(!post.isMarked());
+            DBManager.getInstance().updatePostStar(post.getId(), post.isMarked());
+            markBtn.setBackground(post.isMarked() ? getDrawable(R.drawable.mark_yes) : getDrawable(R.drawable.mark_no));
         });
 
-
-        final GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() { //使用SimpleOnGestureListener可以只覆盖实现自己想要的手势
+        //使用SimpleOnGestureListener可以只覆盖实现自己想要的手势
+        final GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
-            public boolean onDoubleTap(MotionEvent e) { //DoubleTap手势的处理
+            public boolean onDoubleTap(MotionEvent e) {
+                //DoubleTap手势的处理
                 content.scrollTo(0, 0);
                 return super.onDoubleTap(e);
             }
         });
 
-        postToolbar.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) { //使用GestureDetector对Toolbar进行手势监听
-                return gestureDetector.onTouchEvent(event);
-            }
+        //使用GestureDetector对Toolbar进行手势监听
+        postToolbar.setOnTouchListener((v, event) -> {
+            return gestureDetector.onTouchEvent(event);
         });
     }
 }

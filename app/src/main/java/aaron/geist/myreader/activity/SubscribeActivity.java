@@ -38,12 +38,7 @@ public class SubscribeActivity extends Activity {
 
     public void initButton() {
         Button btn = findViewById(R.id.clearSubBtn);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                SubscribeManager.getInstance().unSubscribeAll();
-            }
-        });
+        btn.setOnClickListener(view -> SubscribeManager.getInstance().unSubscribeAll());
     }
 
     @Override
