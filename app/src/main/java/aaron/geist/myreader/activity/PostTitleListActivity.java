@@ -15,14 +15,14 @@ import java.util.List;
 import java.util.Map;
 
 import aaron.geist.myreader.R;
-import aaron.geist.myreader.constant.DBContants;
+import aaron.geist.myreader.constant.DBConstants;
 import aaron.geist.myreader.database.DBManager;
 import aaron.geist.myreader.domain.CrawlerRequest;
 import aaron.geist.myreader.domain.Post;
 import aaron.geist.myreader.domain.Website;
 import aaron.geist.myreader.extend.RefreshLayout;
-import aaron.geist.myreader.loader.AsyncSiteCrawler;
 import aaron.geist.myreader.loader.AsyncCallback;
+import aaron.geist.myreader.loader.AsyncSiteCrawler;
 
 /**
  * Created by Aaron on 2015/8/7.
@@ -46,7 +46,7 @@ public class PostTitleListActivity extends Activity implements AsyncCallback, Re
         setContentView(R.layout.post_title);
 
         Intent intent = this.getIntent();
-        siteId = intent.getLongExtra(DBContants.POST_COLUMN_EXTERNAL_ID, 0);
+        siteId = intent.getLongExtra(DBConstants.POST_COLUMN_EXTERNAL_ID, 0);
 
         listView = findViewById(R.id.postTitleList);
         dbManager = DBManager.getInstance();
@@ -67,24 +67,24 @@ public class PostTitleListActivity extends Activity implements AsyncCallback, Re
 
         for (Post post : postList) {
             Map<String, String> map = new HashMap<String, String>();
-            map.put(DBContants.POST_COLUMN_TITLE, post.getTitle());
-            map.put(DBContants.COLUMN_ID, String.valueOf(post.getId()));
+            map.put(DBConstants.POST_COLUMN_TITLE, post.getTitle());
+            map.put(DBConstants.COLUMN_ID, String.valueOf(post.getId()));
             adapterList.add(map);
         }
         adapter = new SimpleAdapter(this, adapterList, R.layout.post_title_item,
-                new String[]{DBContants.POST_COLUMN_TITLE}, new int[]{R.id.postTitle});
+                new String[]{DBConstants.POST_COLUMN_TITLE}, new int[]{R.id.postTitle});
 
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
                 Map<String, String> map = (Map<String, String>) listView.getItemAtPosition(pos);
-                long postId = Long.valueOf(map.get(DBContants.COLUMN_ID));
+                long postId = Long.valueOf(map.get(DBConstants.COLUMN_ID));
 
                 Log.d("", "select post id=" + postId);
 
                 Intent intent = new Intent();
-                intent.putExtra(DBContants.COLUMN_ID, postId);
+                intent.putExtra(DBConstants.COLUMN_ID, postId);
                 intent.setClass(view.getContext(), PostActivity.class);
                 startActivity(intent);
             }
@@ -101,8 +101,8 @@ public class PostTitleListActivity extends Activity implements AsyncCallback, Re
 
         for (Post post : postList) {
             Map<String, String> map = new HashMap<String, String>();
-            map.put(DBContants.POST_COLUMN_TITLE, post.getTitle());
-            map.put(DBContants.COLUMN_ID, String.valueOf(post.getId()));
+            map.put(DBConstants.POST_COLUMN_TITLE, post.getTitle());
+            map.put(DBConstants.COLUMN_ID, String.valueOf(post.getId()));
             adapterList.add(map);
         }
         adapter.notifyDataSetChanged();

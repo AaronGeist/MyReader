@@ -11,8 +11,6 @@ import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.View;
-import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 
@@ -122,8 +120,11 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show());
+        fab.setOnClickListener(view -> {
+            Snackbar.make(view, "回到顶端", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+            postTitleListView.smoothScrollToPosition(0);
+        });
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -221,7 +222,7 @@ public class MainActivity extends AppCompatActivity
         Collection<Long> websiteIds = new ArrayList<>();
         websites.forEach(w -> websiteIds.add(w.getId()));
 
-        postList.addAll(dbManager.getUnreadPosts(currentDbPageNum, websiteIds));
+        postList.addAll(dbManager.getPosts(currentDbPageNum, websiteIds));
 
         // sort with timestamp, then website, then externalId
         Collections.sort(postList);
@@ -347,7 +348,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         // load posts from local DB
-        List<Post> posts = dbManager.getUnreadPosts(++currentDbPageNum, websiteIds);
+        List<Post> posts = dbManager.getPosts(++currentDbPageNum, websiteIds);
 
         if (posts.isEmpty()) {
             ToastUtil.toastShort("看看有什么旧货");
@@ -357,7 +358,7 @@ public class MainActivity extends AppCompatActivity
                 CrawlerRequest request = new CrawlerRequest();
                 request.setWebsite(website);
                 request.setReverse(true);
-                request.setTargetNum(10);
+                request.setTargetNum(20);
 
                 AsyncSiteCrawler crawler = new AsyncSiteCrawler();
                 crawler.setCallback(this);

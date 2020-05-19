@@ -3,9 +3,9 @@ package aaron.geist.myreader.constant;
 /**
  * Created by Aaron on 2015/7/27.
  */
-public class DBContants {
+public class DBConstants {
 
-    public static final int pageSize = 15;
+    public static final int pageSize = 30;
     public static final String COLUMN_ID = "id";
 
     public static final String WEBSITE_TABLE_NAME = "website";
